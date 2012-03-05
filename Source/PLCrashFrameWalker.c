@@ -31,6 +31,43 @@
 
 
 /**
+ * Return the plframe_error_t corresponding to the given libunwind(3) error code
+ */
+plframe_error_t plframe_error_from_unwerror(int error) {
+	switch (error) {
+		case UNW_ESUCCESS:
+			return PLFRAME_ESUCCESS;
+		case UNW_EUNSPEC:
+			return PLFRAME_EUNKNOWN;
+		case UNW_ENOMEM:
+			/* Close equivelance; memory allocation should not be happening. */
+			return PLFRAME_INTERNAL;
+		case UNW_EBADREG:
+			return PLFRAME_EBADREG;
+		case UNW_EREADONLYREG:
+			return PLFRAME_ENOTSUP;
+		case UNW_ESTOPUNWIND:
+			/* The meaning of this error is unclear. */
+			return PLFRAME_EUNKNOWN;
+		case UNW_EINVALIDIP:
+			/* Close equivelance. */
+			return PLFRAME_EBADFRAME;
+		case UNW_EBADFRAME:
+			return PLFRAME_EBADFRAME;
+		case UNW_EINVAL:
+			return PLFRAME_ENOTSUP;
+		case UNW_EBADVERSION:
+			/* Close equivelance. */
+			return PLFRAME_ENOTSUP;
+		case UNW_ENOINFO:
+			/* Close equivelance. */
+			return PLFRAME_ENOTSUP;
+		default:
+			return PLFRAME_EUNKNOWN;
+	}
+}
+
+/**
  * Return an error description for the given plframe_error_t.
  */
 const char *plframe_strerror (plframe_error_t error) {

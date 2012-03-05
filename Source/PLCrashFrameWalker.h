@@ -35,6 +35,8 @@
 
 #import <mach/mach.h>
 
+#import <libunwind.h>
+
 /**
  * @internal
  * @defgroup plframe_backtrace Backtrace Frame Walker
@@ -94,11 +96,14 @@ typedef int plframe_regnum_t;
  * Frame cursor context.
  */
 typedef struct plframe_cursor {
-    /** true if this is the initial frame */
-    bool init_frame;
+    /** frame counter, -1 if cursor_next() not called, 0 is top frame */
+    int nframe;
     
     /** Thread context */
     ucontext_t *uap;
+	
+	/** libunwind context */
+	unw_cursor_t unwcrsr;
     
     /** Stack frame data */
     void *fp[PLFRAME_STACKFRAME_LEN];
@@ -150,6 +155,7 @@ typedef struct plframe_test_thread {
 
 
 /* Shared functions */
+plframe_error_t plframe_error_from_unwerror(int error);
 const char *plframe_strerror (plframe_error_t error);
 kern_return_t plframe_read_addr (const void *source, void *dest, size_t len);
 

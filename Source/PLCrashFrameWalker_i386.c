@@ -43,7 +43,7 @@
 // PLFrameWalker API
 plframe_error_t plframe_cursor_init (plframe_cursor_t *cursor, ucontext_t *uap) {
     cursor->uap = uap;
-    cursor->init_frame = true;
+    cursor->nframe = -1;
     cursor->fp[0] = NULL;
 
     return PLFRAME_ESUCCESS;
@@ -106,9 +106,9 @@ plframe_error_t plframe_cursor_next (plframe_cursor_t *cursor) {
     void *prevfp = cursor->fp[0];
 
     /* Fetch the next stack address */
-    if (cursor->init_frame) {
+    if (cursor->nframe == -1) {
         /* The first frame is already available, so there's nothing to do */
-        cursor->init_frame = false;
+        ++cursor->nframe;
         return PLFRAME_ESUCCESS;
     } else {
         if (cursor->fp[0] == NULL) {
@@ -118,6 +118,7 @@ plframe_error_t plframe_cursor_next (plframe_cursor_t *cursor) {
             /* Frame data loaded, walk the stack */
             kr = plframe_read_addr(cursor->fp[0], cursor->fp, sizeof(cursor->fp));
         }
+		++cursor->nframe;
     }
     
     /* Was the read successful? */
@@ -129,7 +130,7 @@ plframe_error_t plframe_cursor_next (plframe_cursor_t *cursor) {
         return PLFRAME_ENOFRAME;
 
     /* Is the stack growing in the right direction? */
-    if (!cursor->init_frame && prevfp > cursor->fp[0])
+    if (cursor->nframe >= 0 && prevfp > cursor->fp[0])
         return PLFRAME_EBADFRAME;
 
     /* New frame fetched */
