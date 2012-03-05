@@ -119,7 +119,7 @@ plframe_error_t plframe_cursor_next (plframe_cursor_t *cursor) {
             /* Frame data loaded, walk the stack */
             kr = plframe_read_addr(cursor->fp[0], cursor->fp, sizeof(cursor->fp));
         }
-		++cursor->nframe;
+        ++cursor->nframe;
     }
     
     /* Was the read successful? */

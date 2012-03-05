@@ -101,9 +101,9 @@ typedef struct plframe_cursor {
     
     /** Thread context */
     ucontext_t *uap;
-	
-	/** libunwind context */
-	unw_cursor_t unwcrsr;
+    
+    /** libunwind context */
+    unw_cursor_t unwcrsr;
     
     /** Stack frame data */
     void *fp[PLFRAME_STACKFRAME_LEN];
