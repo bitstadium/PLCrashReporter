@@ -130,7 +130,7 @@ plcrash_error_t plcrash_async_image_read_from_header(plcrash_async_image_t *imag
         }
         /* DWARF dSYM UUID */
         else if (cmd->cmd == LC_UUID && cmd->cmdsize == sizeof(struct uuid_command)) {
-        	image->hasUUID = true;
+            image->hasUUID = true;
             memcpy(image->uuid, ((struct uuid_command *)cmd)->uuid, sizeof(image->uuid));
         }
 
