@@ -63,6 +63,7 @@ typedef struct plcrash_async_image {
     uint64_t textsectsize;
     
     /** The binary image's UUID, if any. */
+    bool hasUUID;
     uint8_t uuid[16];
 
     /** The previous image in the list, or NULL. */

@@ -887,7 +887,7 @@ static size_t plcrash_writer_write_binary_image (plcrash_async_file_t *file, plc
     rv += plcrash_writer_pack(file, PLCRASH_PROTO_BINARY_IMAGE_NAME_ID, PLPROTOBUF_C_TYPE_STRING, image->name);
 
     /* UUID */
-    if (memcmp(image->uuid, (void *)(uint8_t [16]){ 0 }, 16) != 0) {
+    if (image->hasUUID) {
         PLProtobufCBinaryData binary;
     
         /* Write the 128-bit UUID */
