@@ -29,6 +29,7 @@
 #include <stdint.h>
 #include <libkern/OSAtomic.h>
 #include <stdbool.h>
+#include <mach-o/dyld.h>
 
 /**
  * @internal
@@ -42,8 +43,29 @@ typedef struct plcrash_async_image {
     
     /** The binary image's name/path. */
     char *name;
+    
+    /** The binary image's CPU type. */
+    cpu_type_t cputype;
+    
+    /** The binary image's CPU subtype. */
+    cpu_subtype_t cpusubtype;
+    
+    /** The start address of the binary image's __TEXT segment. */
+    uintptr_t textbase;
+    
+    /** The size of the binary image's __TEXT segment. */
+    uint64_t textsize;
+    
+    /** The start address of the binary image's __TEXT,__text section. */
+    uintptr_t textsectbase;
+    
+    /** The mach size of the binary image's __TEXT,__text section. */
+    uint64_t textsectsize;
+    
+    /** The binary image's UUID, if any. */
+    uint8_t uuid[16];
 
-    /** The previous image in the list, or NULL */
+    /** The previous image in the list, or NULL. */
     struct plcrash_async_image *prev;
     
     /** The next image in the list, or NULL. */
@@ -74,6 +96,8 @@ typedef struct plcrash_async_image_list {
     /** The node free list. */
     plcrash_async_image_t *free;
 } plcrash_async_image_list_t;
+
+plcrash_error_t plcrash_async_image_read_from_header(plcrash_async_image_t *image, uintptr_t header);
 
 void plcrash_async_image_list_init (plcrash_async_image_list_t *list);
 void plcrash_async_image_list_free (plcrash_async_image_list_t *list);

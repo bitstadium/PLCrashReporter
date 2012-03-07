@@ -868,100 +868,40 @@ static size_t plcrash_writer_write_thread (plcrash_async_file_t *file, thread_t 
  * @param name binary image path (or name).
  * @param image_base Mach-O image base.
  */
-static size_t plcrash_writer_write_binary_image (plcrash_async_file_t *file, const char *name, const void *header) {
+static size_t plcrash_writer_write_binary_image (plcrash_async_file_t *file, plcrash_async_image_t *image) {
     size_t rv = 0;
-    uint64_t mach_size = 0;
-    uint32_t ncmds;
-    const struct mach_header *header32 = (const struct mach_header *) header;
-    const struct mach_header_64 *header64 = (const struct mach_header_64 *) header;
-
-    struct load_command *cmd;
-    cpu_type_t cpu_type;
-    cpu_subtype_t cpu_subtype;
-
-    /* Check for 32-bit/64-bit header and extract required values */
-    switch (header32->magic) {
-        /* 32-bit */
-        case MH_MAGIC:
-        case MH_CIGAM:
-            ncmds = header32->ncmds;
-            cpu_type = header32->cputype;
-            cpu_subtype = header32->cpusubtype;
-            cmd = (struct load_command *) (header32 + 1);
-            break;
-
-        /* 64-bit */
-        case MH_MAGIC_64:
-        case MH_CIGAM_64:
-            ncmds = header64->ncmds;
-            cpu_type = header64->cputype;
-            cpu_subtype = header64->cpusubtype;
-            cmd = (struct load_command *) (header64 + 1);
-            break;
-
-        default:
-            PLCF_DEBUG("Invalid Mach-O header magic value: %x", header32->magic);
-            return 0;
-    }
-
-    /* Compute the image size and search for a UUID */
-    struct uuid_command *uuid = NULL;
-
-    for (uint32_t i = 0; cmd != NULL && i < ncmds; i++) {
-        /* 32-bit text segment */
-        if (cmd->cmd == LC_SEGMENT) {
-            struct segment_command *segment = (struct segment_command *) cmd;
-            if (strcmp(segment->segname, SEG_TEXT) == 0) {
-                mach_size = segment->vmsize;
-            }
-        }
-        /* 64-bit text segment */
-        else if (cmd->cmd == LC_SEGMENT_64) {
-            struct segment_command_64 *segment = (struct segment_command_64 *) cmd;
-
-            if (strcmp(segment->segname, SEG_TEXT) == 0) {
-                mach_size = segment->vmsize;
-            }
-        }
-        /* DWARF dSYM UUID */
-        else if (cmd->cmd == LC_UUID && cmd->cmdsize == sizeof(struct uuid_command)) {
-            uuid = (struct uuid_command *) cmd;
-        }
-
-        cmd = (struct load_command *) ((uint8_t *) cmd + cmd->cmdsize);
-    }
-
-    rv += plcrash_writer_pack(file, PLCRASH_PROTO_BINARY_IMAGE_SIZE_ID, PLPROTOBUF_C_TYPE_UINT64, &mach_size);
+	
+    rv += plcrash_writer_pack(file, PLCRASH_PROTO_BINARY_IMAGE_SIZE_ID, PLPROTOBUF_C_TYPE_UINT64, &image->textsize);
     
     /* Base address */
     {
         uintptr_t base_addr;
         uint64_t u64;
 
-        base_addr = (uintptr_t) header;
+        base_addr = (uintptr_t) image->header;
         u64 = base_addr;
         rv += plcrash_writer_pack(file, PLCRASH_PROTO_BINARY_IMAGE_ADDR_ID, PLPROTOBUF_C_TYPE_UINT64, &u64);
     }
 
     /* Name */
-    rv += plcrash_writer_pack(file, PLCRASH_PROTO_BINARY_IMAGE_NAME_ID, PLPROTOBUF_C_TYPE_STRING, name);
+    rv += plcrash_writer_pack(file, PLCRASH_PROTO_BINARY_IMAGE_NAME_ID, PLPROTOBUF_C_TYPE_STRING, image->name);
 
     /* UUID */
-    if (uuid != NULL) {
+    if (memcmp(image->uuid, (void *)(uint8_t [16]){ 0 }, 16) != 0) {
         PLProtobufCBinaryData binary;
     
         /* Write the 128-bit UUID */
-        binary.len = sizeof(uuid->uuid);
-        binary.data = uuid->uuid;
+        binary.len = sizeof(image->uuid);
+        binary.data = image->uuid;
         rv += plcrash_writer_pack(file, PLCRASH_PROTO_BINARY_IMAGE_UUID_ID, PLPROTOBUF_C_TYPE_BYTES, &binary);
     }
     
     /* Get the processor message size */
-    uint32_t msgsize = plcrash_writer_write_processor_info(NULL, cpu_type, cpu_subtype);
+    uint32_t msgsize = plcrash_writer_write_processor_info(NULL, image->cputype, image->cpusubtype);
 
     /* Write the header and message */
     rv += plcrash_writer_pack(file, PLCRASH_PROTO_BINARY_IMAGE_CODE_TYPE_ID, PLPROTOBUF_C_TYPE_MESSAGE, &msgsize);
-    rv += plcrash_writer_write_processor_info(file, cpu_type, cpu_subtype);
+    rv += plcrash_writer_write_processor_info(file, image->cputype, image->cpusubtype);
 
     return rv;
 }
@@ -1178,9 +1118,9 @@ plcrash_error_t plcrash_log_writer_write (plcrash_log_writer_t *writer, plcrash_
 
         /* Calculate the message size */
         // TODO - switch to plframe_read_addr()
-        size = plcrash_writer_write_binary_image(NULL, image->name, (const void *) image->header);
+        size = plcrash_writer_write_binary_image(NULL, image);
         plcrash_writer_pack(file, PLCRASH_PROTO_BINARY_IMAGES_ID, PLPROTOBUF_C_TYPE_MESSAGE, &size);
-        plcrash_writer_write_binary_image(file, image->name, (const void *) image->header);
+        plcrash_writer_write_binary_image(file, image);
     }
 
     plcrash_async_image_list_set_reading(&writer->image_info.image_list, false);
