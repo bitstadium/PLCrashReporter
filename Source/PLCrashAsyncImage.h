@@ -61,9 +61,12 @@ typedef struct plcrash_async_image {
     
     /** The mach size of the binary image's __TEXT,__text section. */
     uint64_t textsectsize;
-    
-    /** The binary image's UUID, if any. */
+
+    /** If true, the binary has an LC_UUID load command and the uuid field has been populated. */
     bool hasUUID;
+    
+    /** The binary image's UUID from the LC_UUID load command, if any. If the UUID
+     * is available, hasUUID will be true. */
     uint8_t uuid[16];
 
     /** The previous image in the list, or NULL. */
