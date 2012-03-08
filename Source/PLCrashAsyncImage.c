@@ -48,99 +48,6 @@
  */
 
 /**
- * Fill in a binary image based on its mach header.
- *
- * @param image The image structure to be filled out.
- * @param header A pointer to the binary image's mach header.
- *
- * @return Returns a plcrash_error_t. PLCRASH_ESUCCESS is returned for success. Other
- *		   errors are exceptional conditions and should not normally occur.
- */
-plcrash_error_t plcrash_async_image_read_from_header(plcrash_async_image_t *image, uintptr_t header)
-{
-    uint32_t ncmds = 0;
-    const struct mach_header *header32 = (const struct mach_header *) header;
-    const struct mach_header_64 *header64 = (const struct mach_header_64 *) header;
-    struct load_command *cmd;
-	
-    image->header = header;
-    
-    /* Check for 32-bit/64-bit header and extract required values */
-    switch (header32->magic) {
-        /* 32-bit */
-        case MH_MAGIC:
-        case MH_CIGAM:
-            ncmds = header32->ncmds;
-            image->cputype = header32->cputype;
-            image->cpusubtype = header32->cpusubtype;
-            cmd = (struct load_command *) (header32 + 1);
-            break;
-
-        /* 64-bit */
-        case MH_MAGIC_64:
-        case MH_CIGAM_64:
-            ncmds = header64->ncmds;
-            image->cputype = header64->cputype;
-            image->cpusubtype = header64->cpusubtype;
-            cmd = (struct load_command *) (header64 + 1);
-            break;
-
-        default:
-            PLCF_DEBUG("Invalid Mach-O header magic value: %x", header32->magic);
-            return PLCRASH_EINVAL;
-    }
-
-    /* Search for a UUID and record the text segment and section */
-    for (uint32_t i = 0; cmd != NULL && i < ncmds; i++) {
-        /* 32-bit text segment */
-        if (cmd->cmd == LC_SEGMENT) {
-            struct segment_command *segment = (struct segment_command *) cmd;
-            if (strcmp(segment->segname, SEG_TEXT) == 0) {
-            	struct section *section = (struct section *) (cmd + 1);
-                
-                image->textbase = segment->vmaddr;
-                image->textsize = segment->vmsize;
-                for (uint32_t j = 0; section != NULL && j < segment->nsects; j++) {
-                	if (strcmp(section->sectname, SECT_TEXT) == 0) {
-                    	image->textsectbase = section->addr;
-                        image->textsectsize = section->size;
-                        break;
-                    }
-                    section++;
-                }
-            }
-        }
-        /* 64-bit text segment */
-        else if (cmd->cmd == LC_SEGMENT_64) {
-            struct segment_command_64 *segment = (struct segment_command_64 *) cmd;
-            if (strcmp(segment->segname, SEG_TEXT) == 0) {
-            	struct section_64 *section = (struct section_64 *) (cmd + 1);
-                
-                image->textbase = segment->vmaddr;
-                image->textsize = segment->vmsize;
-                for (uint32_t j = 0; section != NULL && j < segment->nsects; j++) {
-                	if (strcmp(section->sectname, SECT_TEXT) == 0) {
-                    	image->textsectbase = section->addr;
-                        image->textsectsize = section->size;
-                        break;
-                    }
-                    section++;
-                }
-            }
-        }
-        /* DWARF dSYM UUID */
-        else if (cmd->cmd == LC_UUID && cmd->cmdsize == sizeof(struct uuid_command)) {
-            image->hasUUID = true;
-            memcpy(image->uuid, ((struct uuid_command *)cmd)->uuid, sizeof(image->uuid));
-        }
-
-        cmd = (struct load_command *) ((uint8_t *) cmd + cmd->cmdsize);
-    }
-    
-    return PLCRASH_ESUCCESS;
-}
-
-/**
  * Initialize a new binary image list and issue a memory barrier
  *
  * @param list The list structure to be initialized.
@@ -166,8 +73,8 @@ void plcrash_async_image_list_free (plcrash_async_image_list_t *list) {
         next = cur->next;
         
         /* Deallocate the current item. */
-        if (cur->name != NULL)
-            free(cur->name);
+        if (cur->image.name != NULL)
+            free(cur->image.name);
         free(cur);
     }
 }
@@ -181,11 +88,11 @@ void plcrash_async_image_list_free (plcrash_async_image_list_t *list) {
  *
  * @warning This method is not async safe.
  */
-void plcrash_async_image_list_append (plcrash_async_image_list_t *list, uintptr_t header, const char *name) {
+void plcrash_async_image_list_append (plcrash_async_image_list_t *list, plcrash_macho_image_t *image) {
     /* Initialize the new entry. */
     plcrash_async_image_t *new = calloc(1, sizeof(plcrash_async_image_t));
-    plcrash_async_image_read_from_header(new, header);
-    new->name = strdup(name);
+    new->image = *image;
+    new->image.name = strdup(new->image.name);
     
     /* Update the image record and issue a memory barrier to ensure a consistent view. */
     OSMemoryBarrier();
@@ -234,7 +141,7 @@ void plcrash_async_image_list_remove (plcrash_async_image_list_t *list, uintptr_
         /* Find the record. */
         plcrash_async_image_t *item = list->head;
         while (item != NULL) {
-            if (item->header == header)
+            if (item->image.header == header)
                 break;
 
             item = item->next;
@@ -276,8 +183,8 @@ void plcrash_async_image_list_remove (plcrash_async_image_list_t *list, uintptr_
         while (list->refcount > 0) {
         }
 
-        if (item->name != NULL)
-            free(item->name);
+        if (item->image.name != NULL)
+            free(item->image.name);
         free(item);
     } OSSpinLockUnlock(&list->write_lock);
 }

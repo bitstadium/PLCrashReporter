@@ -407,16 +407,13 @@ plcrash_error_t plcrash_log_writer_init (plcrash_log_writer_t *writer, NSString 
  * @warning This function is not async safe, and must be called outside of a signal handler.
  */
 void plcrash_log_writer_add_image (plcrash_log_writer_t *writer, const void *header_addr) {
-    Dl_info info;
-
-    /* Look up the image info */
-    if (dladdr(header_addr, &info) == 0) {
-        PLCF_DEBUG("dladdr(%p, ...) failed", header_addr);
-        return;
-    }
-
+	plcrash_macho_image_t image;
+    
+    /* Parse the image */
+    plcrash_macho_image_read_from_header(&image, (uintptr_t)header_addr);
+    
     /* Register the image */
-    plcrash_async_image_list_append(&writer->image_info.image_list, (uintptr_t)header_addr, info.dli_fname);
+    plcrash_async_image_list_append(&writer->image_info.image_list, &image);
 }
 
 /**
@@ -868,40 +865,40 @@ static size_t plcrash_writer_write_thread (plcrash_async_file_t *file, thread_t 
  * @param name binary image path (or name).
  * @param image_base Mach-O image base.
  */
-static size_t plcrash_writer_write_binary_image (plcrash_async_file_t *file, plcrash_async_image_t *image) {
+static size_t plcrash_writer_write_binary_image (plcrash_async_file_t *file, plcrash_async_image_t *entry) {
     size_t rv = 0;
 	
-    rv += plcrash_writer_pack(file, PLCRASH_PROTO_BINARY_IMAGE_SIZE_ID, PLPROTOBUF_C_TYPE_UINT64, &image->textsize);
+    rv += plcrash_writer_pack(file, PLCRASH_PROTO_BINARY_IMAGE_SIZE_ID, PLPROTOBUF_C_TYPE_UINT64, &entry->image.textsize);
     
     /* Base address */
     {
         uintptr_t base_addr;
         uint64_t u64;
 
-        base_addr = (uintptr_t) image->header;
+        base_addr = (uintptr_t) entry->image.header;
         u64 = base_addr;
         rv += plcrash_writer_pack(file, PLCRASH_PROTO_BINARY_IMAGE_ADDR_ID, PLPROTOBUF_C_TYPE_UINT64, &u64);
     }
 
     /* Name */
-    rv += plcrash_writer_pack(file, PLCRASH_PROTO_BINARY_IMAGE_NAME_ID, PLPROTOBUF_C_TYPE_STRING, image->name);
+    rv += plcrash_writer_pack(file, PLCRASH_PROTO_BINARY_IMAGE_NAME_ID, PLPROTOBUF_C_TYPE_STRING, entry->image.name);
 
     /* UUID */
-    if (image->hasUUID) {
+    if (entry->image.hasUUID) {
         PLProtobufCBinaryData binary;
     
         /* Write the 128-bit UUID */
-        binary.len = sizeof(image->uuid);
-        binary.data = image->uuid;
+        binary.len = sizeof(entry->image.uuid);
+        binary.data = entry->image.uuid;
         rv += plcrash_writer_pack(file, PLCRASH_PROTO_BINARY_IMAGE_UUID_ID, PLPROTOBUF_C_TYPE_BYTES, &binary);
     }
     
     /* Get the processor message size */
-    uint32_t msgsize = plcrash_writer_write_processor_info(NULL, image->cputype, image->cpusubtype);
+    uint32_t msgsize = plcrash_writer_write_processor_info(NULL, entry->image.cputype, entry->image.cpusubtype);
 
     /* Write the header and message */
     rv += plcrash_writer_pack(file, PLCRASH_PROTO_BINARY_IMAGE_CODE_TYPE_ID, PLPROTOBUF_C_TYPE_MESSAGE, &msgsize);
-    rv += plcrash_writer_write_processor_info(file, image->cputype, image->cpusubtype);
+    rv += plcrash_writer_write_processor_info(file, entry->image.cputype, entry->image.cpusubtype);
 
     return rv;
 }

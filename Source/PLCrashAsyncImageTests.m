@@ -28,7 +28,9 @@
 
 #import "GTMSenTestCase.h"
 
+#import "PLCrashAsync.h"
 #import "PLCrashAsyncImage.h"
+#import "PLCrashMachOImage.h"
 
 @interface PLCrashAsyncImageTests : SenTestCase {
     plcrash_async_image_list_t _list;
@@ -47,15 +49,21 @@
 }
 
 - (void) testAppendImage {
-    plcrash_async_image_list_append(&_list, 0x0, "image_name");
+	plcrash_macho_image_t image0 = { .header = 0x0, .name = "image_name" },
+                          image1 = { .header = 0x1, .name = "image_name" },
+                          image2 = { .header = 0x2, .name = "image_name" },
+                          image3 = { .header = 0x3, .name = "image_name" },
+                          image4 = { .header = 0x4, .name = "image_name" };
+                          
+    plcrash_async_image_list_append(&_list, &image0);
 
     STAssertNotNULL(_list.head, @"List HEAD should be set to our new image entry");
     STAssertEquals(_list.head, _list.tail, @"The list head and tail should be equal for the first entry");
     
-    plcrash_async_image_list_append(&_list, 0x1, "image_name");
-    plcrash_async_image_list_append(&_list, 0x2, "image_name");
-    plcrash_async_image_list_append(&_list, 0x3, "image_name");
-    plcrash_async_image_list_append(&_list, 0x4, "image_name");
+    plcrash_async_image_list_append(&_list, &image1);
+    plcrash_async_image_list_append(&_list, &image2);
+    plcrash_async_image_list_append(&_list, &image3);
+    plcrash_async_image_list_append(&_list, &image4);
     
     /* Verify the appended elements */
     plcrash_async_image_t *item = NULL;
@@ -70,15 +78,17 @@
         }
 
         /* Validate its value */
-        STAssertEquals(i, item->header, @"Incorrect header value");
-        STAssertEqualCStrings("image_name", item->name, @"Incorrect name value");
+        STAssertEquals(i, item->image.header, @"Incorrect header value");
+        STAssertEqualCStrings("image_name", item->image.name, @"Incorrect name value");
     }
 }
 
 
 /* Test removing the last image in the list. */
 - (void) testRemoveLastImage {
-    plcrash_async_image_list_append(&_list, 0x0, "image_name");
+	plcrash_macho_image_t image = { .header = 0x0, .name = "image_name" };
+    
+    plcrash_async_image_list_append(&_list, &image);
     plcrash_async_image_list_remove(&_list, 0x0);
 
     STAssertNULL(_list.head, @"List HEAD should now be NULL");
@@ -86,11 +96,18 @@
 }
 
 - (void) testRemoveImage {
-    plcrash_async_image_list_append(&_list, 0x0, "image_name");
-    plcrash_async_image_list_append(&_list, 0x1, "image_name");
-    plcrash_async_image_list_append(&_list, 0x2, "image_name");
-    plcrash_async_image_list_append(&_list, 0x3, "image_name");
-    plcrash_async_image_list_append(&_list, 0x4, "image_name");
+	plcrash_macho_image_t image0 = { .header = 0x0, .name = "image_name" },
+                          image1 = { .header = 0x1, .name = "image_name" },
+                          image2 = { .header = 0x2, .name = "image_name" },
+                          image3 = { .header = 0x3, .name = "image_name" },
+                          image4 = { .header = 0x4, .name = "image_name" };
+                          
+    plcrash_async_image_list_append(&_list, &image0);
+    plcrash_async_image_list_append(&_list, &image1);
+    plcrash_async_image_list_append(&_list, &image2);
+    plcrash_async_image_list_append(&_list, &image3);
+    plcrash_async_image_list_append(&_list, &image4);
+    
 
     /* Try a non-existent item */
     plcrash_async_image_list_remove(&_list, 0x42);
@@ -113,8 +130,8 @@
         }
         
         /* Validate its value */
-        STAssertEquals(val, item->header, @"Incorrect header value");
-        STAssertEqualCStrings("image_name", item->name, @"Incorrect name value");
+        STAssertEquals(val, item->image.header, @"Incorrect header value");
+        STAssertEqualCStrings("image_name", item->image.name, @"Incorrect name value");
         val += 0x2;
     }
 }

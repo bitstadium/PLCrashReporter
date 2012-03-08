@@ -29,7 +29,7 @@
 #include <stdint.h>
 #include <libkern/OSAtomic.h>
 #include <stdbool.h>
-#include <mach-o/dyld.h>
+#include "PLCrashMachOImage.h"
 
 /**
  * @internal
@@ -38,36 +38,8 @@
  * Async-safe binary image list element.
  */
 typedef struct plcrash_async_image {
-    /** The binary image's header address. */
-    uintptr_t header;
-    
-    /** The binary image's name/path. */
-    char *name;
-    
-    /** The binary image's CPU type. */
-    cpu_type_t cputype;
-    
-    /** The binary image's CPU subtype. */
-    cpu_subtype_t cpusubtype;
-    
-    /** The start address of the binary image's __TEXT segment. */
-    uintptr_t textbase;
-    
-    /** The size of the binary image's __TEXT segment. */
-    uint64_t textsize;
-    
-    /** The start address of the binary image's __TEXT,__text section. */
-    uintptr_t textsectbase;
-    
-    /** The mach size of the binary image's __TEXT,__text section. */
-    uint64_t textsectsize;
-
-    /** If true, the binary has an LC_UUID load command and the uuid field has been populated. */
-    bool hasUUID;
-    
-    /** The binary image's UUID from the LC_UUID load command, if any. If the UUID
-     * is available, hasUUID will be true. */
-    uint8_t uuid[16];
+	/** The binary image's data */
+    plcrash_macho_image_t image;
 
     /** The previous image in the list, or NULL. */
     struct plcrash_async_image *prev;
@@ -101,11 +73,9 @@ typedef struct plcrash_async_image_list {
     plcrash_async_image_t *free;
 } plcrash_async_image_list_t;
 
-plcrash_error_t plcrash_async_image_read_from_header(plcrash_async_image_t *image, uintptr_t header);
-
 void plcrash_async_image_list_init (plcrash_async_image_list_t *list);
 void plcrash_async_image_list_free (plcrash_async_image_list_t *list);
-void plcrash_async_image_list_append (plcrash_async_image_list_t *list, uintptr_t header, const char *name);
+void plcrash_async_image_list_append (plcrash_async_image_list_t *list, plcrash_macho_image_t *image);
 void plcrash_async_image_list_remove (plcrash_async_image_list_t *list, uintptr_t header);
 
 void plcrash_async_image_list_set_reading (plcrash_async_image_list_t *list, bool enable);
