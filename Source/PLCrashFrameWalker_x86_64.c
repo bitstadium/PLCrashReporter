@@ -30,6 +30,7 @@
 
 #import "PLCrashFrameWalker.h"
 #import "PLCrashAsync.h"
+#import "PLCrashAsyncImage.h"
 
 #import <signal.h>
 #import <assert.h>
@@ -45,8 +46,9 @@ plframe_error_t plframe_cursor_init (plframe_cursor_t *cursor, ucontext_t *uap, 
     cursor->nframe = -1;
     cursor->fp[0] = NULL;
     cursor->image_list = image_list;
-    cursor->unw_endstack = false;
+    cursor->endstack = false;
     cursor->last_unwind_address = 0;
+    cursor->last_stack_pointer = cursor->uap->uc_mcontext->__ss.__rsp;
     
     /* The first valid frame is the current instruction, by definition. */
     cursor->last_valid_frame = cursor->uap->uc_mcontext->__ss.__rip;
@@ -121,11 +123,67 @@ plframe_error_t plframe_cursor_thread_init (plframe_cursor_t *cursor, thread_t t
     return plframe_cursor_init(cursor, uap, image_list);
 }
 
-//            /* No frame data has been loaded, fetch it from register state */
-//        {   kr = plframe_read_addr((void *) cursor->uap->uc_mcontext->__ss.__rbp, cursor->fp, sizeof(cursor->fp));
-//        } else {
-//            /* Frame data loaded, walk the stack */
-//            kr = plframe_read_addr(cursor->fp[0], cursor->fp, sizeof(cursor->fp));}
+
+static bool plframe_cursor_address_looks_valid (plframe_cursor_t *cursor, uintptr_t address)
+{
+    /* Optimization: The entire bottom 4GB of address space is known to be
+       invalid on OS X. Immediately return false if the address is in that
+       range. */
+    if ((address & 0xFFFFFFFF00000000) == 0)
+        return false;
+    
+    plcrash_async_image_t *entry = NULL;
+    
+    /* Loop over all loaded images, checking whether the address is within its
+       VM range. Facilities for checking whether the address falls within a
+       valid symbol are unsafe at async-signal time. */
+    //PLCF_DEBUG("cursor_address_looks_valid(): trying address %llx", (uint64_t)address);
+    plcrash_async_image_list_set_reading(cursor->image_list, true);
+    while ((entry = plcrash_async_image_list_next(cursor->image_list, entry)) != NULL) {
+        if (address >= entry->image.header && address <= entry->image.header + entry->image.textsize) {
+            //PLCF_DEBUG("cursor_address_looks_valid(): found address %llx in image with range %llx to %llx", (uint64_t)address,
+            //          (uint64_t)entry->image.header, (uint64_t)entry->image.header + entry->image.textsize);
+            plcrash_async_image_list_set_reading(cursor->image_list, false);
+            return true;
+        }
+    }
+    plcrash_async_image_list_set_reading(cursor->image_list, false);
+    return false;
+}
+
+plframe_error_t plframe_cursor_scan_stack (plframe_cursor_t *cursor)
+{
+    /* This is the number of words of stack the scanner will look through before
+       giving up. */
+    const size_t search_space = 500;
+    
+    for (plframe_greg_t loc = cursor->last_stack_pointer;
+         loc <= cursor->last_stack_pointer + (search_space * sizeof(plframe_greg_t));
+         loc += sizeof(plframe_greg_t))
+    {
+        plframe_greg_t data;
+        kern_return_t result;
+        
+        result = plframe_read_addr((const void *)loc, &data, sizeof(data));
+        if (result != KERN_SUCCESS) {
+            /* ran off the end of the stack; treat it as no more frames */
+            //PLCF_DEBUG("cursor_scan_stack(): ran off the end of the stack, returning end of frames");
+            return PLFRAME_ENOFRAME;
+        }
+        if (plframe_cursor_address_looks_valid(cursor, data)) {
+            /* This is a valid address in some loaded address space. Cross
+               fingers and hope, because that's all the checks we can do at
+               async signal time. Record the address, advance the saved stack
+               pointer, and return success. */
+            //PLCF_DEBUG("cursor_scan_stack(): found apparently valid address %llx, running with it", (uint64_t)data);
+            cursor->last_stack_pointer = loc + sizeof(plframe_greg_t);
+            cursor->last_valid_frame = data;
+            return PLFRAME_ESUCCESS;
+        }
+    }
+    //PLCF_DEBUG("cursor_scan_stack(): found no valid addresses within %ld words, giving up", search_space);
+    return PLFRAME_ENOFRAME;
+}
 
 // PLFrameWalker API
 plframe_error_t plframe_cursor_next (plframe_cursor_t *cursor) {
@@ -134,71 +192,72 @@ plframe_error_t plframe_cursor_next (plframe_cursor_t *cursor) {
     if (cursor->nframe == -1) {
         /* The first frame is loaded by unw_init_local(), so no action needed */
         ++cursor->nframe;
-PLCF_DEBUG("cursor_next(): first frame; returning success");
-    }
-    /* If libunwind returned an "end stack" on the last call, one of two things
-       has happened:
-       
-       1) It really is the bottom of the stack.
-       2) libunwind didn't find any unwinding info for the current frame and
-          decided to stop trying.
-       
-       The difference between these cases is detected by checking for a
-       duplicated frame in the unwind cursor - if libunwind returns the same
-       frame twice in a row and signals end at the same time, it failed to find
-       any unwinding information. There is no better way to detect this case
-       without digging into libunwind internals.
-    */
-    else if (cursor->unw_endstack) {
-        /* Read the address directly from libunwind, as calling our own register
-           reader might read a more current one from a stack scan. */
-        unw_word_t reg;
-        
-        unw_get_reg(&cursor->unwcrsr, UNW_REG_IP, &reg);
-PLCF_DEBUG("cursor_next(): libunwind signaled end; checking current IP %llx against last unwind IP %llx", (uint64_t)reg, (uint64_t)cursor->last_unwind_address);
-        if (cursor->last_unwind_address == reg) {
-            x86_thread_state64_t state;
-            /* libunwind returned a duplicate on stack end; try a stack scan.
-               Reset the end stack flag so the next frame will try libunwind
-               again. */
-PLCF_DEBUG("cursor_next(): duplicate address detected, trying stack scan and resetting libunwind");
-            cursor->unw_endstack = false;
-            // XXX IMPLEMENT ME STACK SCAN - SET last_valid_frame HERE XXX
-            ++cursor->nframe;
-            return PLFRAME_ENOFRAME;
-            
-            /* Reset libunwind using the results from the stack scan by
-               shoehorning the valid address into a new context pointer. Again,
-               this is undocumented, unsupported, and ugly. */
-            state = cursor->uap->uc_mcontext->__ss;
-            state.__rip = cursor->last_valid_frame;
-            return plframe_error_from_unwerror(unw_init_local(&cursor->unwcrsr, (unw_context_t *)&state));
-        } else {
-PLCF_DEBUG("cursor_next(): libunwind saw legitimate stack end, ending unwind");
-            /* libunwind did not return a duplicate; this really is the end of
-               the stack */
-            return PLFRAME_ENOFRAME;
-        }
+        //PLCF_DEBUG("cursor_next(): first frame; returning success");
+    } else if (cursor->endstack) {
+        return PLFRAME_ENOFRAME;
     } else {
         int unwr;
         
         /* libunwind hasn't signaled a stack end yet; record the last address
            retrieved from it as valid */
         unw_get_reg(&cursor->unwcrsr, UNW_REG_IP, &cursor->last_unwind_address);
-PLCF_DEBUG("cursor_next(): libunwind context is still valid; record frame %llx and step via libunwind", (uint64_t)cursor->last_unwind_address);
+        //PLCF_DEBUG("cursor_next(): libunwind context is still valid; record frame %llx and step via libunwind", (uint64_t)cursor->last_unwind_address);
         unwr = unw_step(&cursor->unwcrsr);
         ++cursor->nframe;
         if (unwr < 0) {
-PLCF_DEBUG("cursor_next(): libunwind error %d", unwr);
+            //PLCF_DEBUG("cursor_next(): libunwind error %d", unwr);
             return plframe_error_from_unwerror(unwr);
         } else {
+            unw_word_t reg;
+            
+            unw_get_reg(&cursor->unwcrsr, UNW_REG_IP, &reg);
             if (unwr == 0) {
-                /* libunwind saw the end of the stack or a lack of unwind info;
-                   flag it for a check next time 'round */
-                cursor->unw_endstack = true;
+                /* If libunwind returned an "end stack", one of two things has
+                   happened:
+                   1) It really is the bottom of the stack.
+                   2) libunwind didn't find any unwinding info for the current
+                      frame and decided to stop trying.
+                   The difference between these cases is detected by checking
+                   for a duplicated frame in the unwind cursor - if libunwind
+                   returns the same frame twice in a row and signals end at the
+                   same time, it failed to find any unwinding information. There
+                   is no better way to detect this case without digging into
+                   libunwind internals.
+                */
+                //PLCF_DEBUG("cursor_next(): libunwind signaled end; checking new IP %llx vs last unwind IP %llx", (uint64_t)reg, (uint64_t)cursor->last_unwind_address);
+                if (cursor->last_unwind_address == reg) {
+                    plcrash_error_t result;
+                    /* libunwind returned a duplicate on stack end; try a stack
+                       scan, which updates last_valid_frame. */
+                    //PLCF_DEBUG("cursor_next(): duplicate address detected, trying stack scan and resetting libunwind");
+                    result = plframe_cursor_scan_stack(cursor);
+                    if (result == PLFRAME_ENOFRAME) {
+                        //PLCF_DEBUG("cursor_next(): stack scan found the end of the stack");
+                        cursor->endstack = true;
+                    } else if (result != PLFRAME_ESUCCESS) {
+                        //PLCF_DEBUG("cursor_next(): stack scan error %d", result);
+                        return result;
+                    } else {
+                        x86_thread_state64_t state;
+                        
+                        /* Reset libunwind using the results from the stack scan
+                           by shoehorning the valid address into a new context
+                           pointer. Again, this is undocumented, unsupported,
+                           and ugly. */
+                        //PLCF_DEBUG("cursor_next(): stack scan found a valid frame with IP %llx", (uint64_t)cursor->last_valid_frame);
+                        state = cursor->uap->uc_mcontext->__ss;
+                        state.__rip = cursor->last_valid_frame;
+                        return plframe_error_from_unwerror(unw_init_local(&cursor->unwcrsr, (unw_context_t *)&state));
+                    }
+                } else {
+                    //PLCF_DEBUG("cursor_next(): libunwind saw legitimate stack end, ending unwind");
+                    /* libunwind did not return a duplicate; this really is the
+                       end of the stack */
+                    cursor->endstack = true;
+                }
             }
             unw_get_reg(&cursor->unwcrsr, UNW_REG_IP, &cursor->last_valid_frame);
-PLCF_DEBUG("cursor_next(): libunwind stepped successfully, recording current address %llx as valid frame", (uint64_t)cursor->last_valid_frame);
+            //PLCF_DEBUG("cursor_next(): libunwind stepped successfully, recording current address %llx as valid frame", (uint64_t)cursor->last_valid_frame);
         }
     }
     return PLFRAME_ESUCCESS;

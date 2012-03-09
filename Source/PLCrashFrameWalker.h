@@ -119,12 +119,15 @@ typedef struct plframe_cursor {
     /** libunwind context */
     unw_cursor_t unwcrsr;
     
-    /** Flag for an "end stack" return from libunwind */
-    bool unw_endstack;
+    /** Flag for an "end stack" return from libunwind or stack scan */
+    bool endstack;
     
     /** Cache of the last frame address received from libunwind, used to detect
         libunwind duplicates */
     plframe_greg_t last_unwind_address;
+    
+    /** Saved stack pointer for stack scans */
+    plframe_greg_t last_stack_pointer;
     
     /** Binary images list for stack scans */
     plcrash_async_image_list_t *image_list;

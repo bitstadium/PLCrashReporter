@@ -118,7 +118,7 @@ plcrash_error_t plcrash_macho_image_read_from_named_header(plcrash_macho_image_t
         if (cmd->cmd == LC_SEGMENT) {
             struct segment_command *segment = (struct segment_command *) cmd;
             if (strcmp(segment->segname, SEG_TEXT) == 0) {
-            	struct section *section = (struct section *) (cmd + 1);
+            	struct section *section = (struct section *) (segment + 1);
                 
                 image->textbase = segment->vmaddr;
                 image->textsize = segment->vmsize;
@@ -136,7 +136,7 @@ plcrash_error_t plcrash_macho_image_read_from_named_header(plcrash_macho_image_t
         else if (cmd->cmd == LC_SEGMENT_64) {
             struct segment_command_64 *segment = (struct segment_command_64 *) cmd;
             if (strcmp(segment->segname, SEG_TEXT) == 0) {
-            	struct section_64 *section = (struct section_64 *) (cmd + 1);
+            	struct section_64 *section = (struct section_64 *) (segment + 1);
                 
                 image->textbase = segment->vmaddr;
                 image->textsize = segment->vmsize;
