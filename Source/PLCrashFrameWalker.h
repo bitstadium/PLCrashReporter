@@ -37,6 +37,9 @@
 
 #import <libunwind.h>
 
+#import "PLCrashAsync.h"
+#import "PLCrashAsyncImage.h"
+
 /**
  * @internal
  * @defgroup plframe_backtrace Backtrace Frame Walker
@@ -91,6 +94,14 @@ typedef int plframe_regnum_t;
 /** Platform-specific length of stack to be read when iterating frames */
 #define PLFRAME_STACKFRAME_LEN PLFRAME_PDEF_STACKFRAME_LEN
 
+
+/** Platform word type */
+typedef plframe_pdef_greg_t plframe_greg_t;
+
+/** Platform floating point register type */
+typedef plframe_pdef_fpreg_t plframe_fpreg_t;
+
+
 /**
  * @internal
  * Frame cursor context.
@@ -102,8 +113,21 @@ typedef struct plframe_cursor {
     /** Thread context */
     ucontext_t *uap;
     
+    /** Address of most recent valid frame from any source */
+    plframe_greg_t last_valid_frame;
+    
     /** libunwind context */
     unw_cursor_t unwcrsr;
+    
+    /** Flag for an "end stack" return from libunwind */
+    bool unw_endstack;
+    
+    /** Cache of the last frame address received from libunwind, used to detect
+        libunwind duplicates */
+    plframe_greg_t last_unwind_address;
+    
+    /** Binary images list for stack scans */
+    plcrash_async_image_list_t *image_list;
     
     /** Stack frame data */
     void *fp[PLFRAME_STACKFRAME_LEN];
@@ -130,13 +154,6 @@ typedef enum {
     /** Last register */
     PLFRAME_REG_LAST = PLFRAME_PDEF_LAST_REG
 } plframe_gen_regnum_t;
-
-
-/** Platform word type */
-typedef plframe_pdef_greg_t plframe_greg_t;
-
-/** Platform floating point register type */
-typedef plframe_pdef_fpreg_t plframe_fpreg_t;
 
 
 /**
@@ -169,20 +186,22 @@ void plframe_test_thread_stop (plframe_test_thead_t *args);
  *
  * @param cursor Cursor record to be initialized.
  * @param uap The context to use for cursor initialization.
+ * @param image_list An (optional) list of binary images to use for stack scanning.
  *
  * @return Returns PLFRAME_ESUCCESS on success, or standard plframe_error_t code if an error occurs.
  */
-plframe_error_t plframe_cursor_init (plframe_cursor_t *cursor, ucontext_t *uap);
+plframe_error_t plframe_cursor_init (plframe_cursor_t *cursor, ucontext_t *uap, plcrash_async_image_list_t *image_list);
 
 /**
  * Initialize the frame cursor by acquiring state from the provided mach thread.
  *
  * @param cursor Cursor record to be initialized.
  * @param thread The thread to use for cursor initialization.
+ * @param image_list An (optional) list of binary images to use for stack scanning.
  *
  * @return Returns PLFRAME_ESUCCESS on success, or standard plframe_error_t code if an error occurs.
  */
-plframe_error_t plframe_cursor_thread_init (plframe_cursor_t *cursor, thread_t thread);
+plframe_error_t plframe_cursor_thread_init (plframe_cursor_t *cursor, thread_t thread, plcrash_async_image_list_t *image_list);
 
 /**
  * Fetch the next cursor.

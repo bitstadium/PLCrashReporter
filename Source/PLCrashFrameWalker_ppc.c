@@ -41,7 +41,7 @@
 #ifdef __ppc__
 
 // PLFrameWalker API
-plframe_error_t plframe_cursor_init (plframe_cursor_t *cursor, ucontext_t *uap) {
+plframe_error_t plframe_cursor_init (plframe_cursor_t *cursor, ucontext_t *uap, plcrash_async_image_list_t *image_list) {
     cursor->uap = uap;
     cursor->nframe = -1;
     cursor->fp[0] = NULL;
@@ -50,7 +50,7 @@ plframe_error_t plframe_cursor_init (plframe_cursor_t *cursor, ucontext_t *uap) 
 }
 
 // PLFrameWalker API
-plframe_error_t plframe_cursor_thread_init (plframe_cursor_t *cursor, thread_t thread) {
+plframe_error_t plframe_cursor_thread_init (plframe_cursor_t *cursor, thread_t thread, plcrash_async_image_list_t *image_list) {
     kern_return_t kr;
     ucontext_t *uap;
     
@@ -85,7 +85,7 @@ plframe_error_t plframe_cursor_thread_init (plframe_cursor_t *cursor, thread_t t
     }
     
     /* Perform standard initialization */
-    plframe_cursor_init(cursor, uap);
+    plframe_cursor_init(cursor, uap, image);
     
     return PLFRAME_ESUCCESS;
 }

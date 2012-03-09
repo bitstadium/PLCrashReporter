@@ -1,7 +1,8 @@
 /*
+ * Author: Gwynne Raskind <gwynne@darkrainfall.org>
  * Author: Landon Fuller <landonf@plausiblelabs.com>
  *
- * Copyright (c) 2008-2009 Plausible Labs Cooperative, Inc.
+ * Copyright (c) 2008-2012 Plausible Labs Cooperative, Inc.
  * All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person
@@ -34,29 +35,28 @@
 #import <assert.h>
 #import <stdlib.h>
 
-
-/** Set this to 1 to use the old way of walking stack frames manually. When set
-  * to 0, libunwind(3) is used.
-  */
-#define PL_WALK_STACK_FRAMES_MANUALLY		0
-
-
 #ifdef __x86_64__
 
 // PLFrameWalker API
-plframe_error_t plframe_cursor_init (plframe_cursor_t *cursor, ucontext_t *uap) {
+plframe_error_t plframe_cursor_init (plframe_cursor_t *cursor, ucontext_t *uap, plcrash_async_image_list_t *image_list) {
     int result = 0;
 
     cursor->uap = uap;
     cursor->nframe = -1;
     cursor->fp[0] = NULL;
+    cursor->image_list = image_list;
+    cursor->unw_endstack = false;
+    cursor->last_unwind_address = 0;
+    
+    /* The first valid frame is the current instruction, by definition. */
+    cursor->last_valid_frame = cursor->uap->uc_mcontext->__ss.__rip;
     
     /*
         libunwind's internal structures are undocumented and unreliable, but
         there's currently no supported way to set up an arbitrary context other
         than being on the thread in question. See:
         http://opensource.apple.com/source/libunwind/libunwind-30/src/Registers.hpp
-        for "documentation" on why this works.
+        for "documentation" on why this "works".
     */
     result = unw_init_local(&cursor->unwcrsr, (unw_context_t *)&cursor->uap->uc_mcontext->__ss);
 
@@ -67,7 +67,7 @@ plframe_error_t plframe_cursor_init (plframe_cursor_t *cursor, ucontext_t *uap) 
 }
 
 // PLFrameWalker API
-plframe_error_t plframe_cursor_thread_init (plframe_cursor_t *cursor, thread_t thread) {
+plframe_error_t plframe_cursor_thread_init (plframe_cursor_t *cursor, thread_t thread, plcrash_async_image_list_t *image_list) {
     kern_return_t kr;
     ucontext_t *uap;
     
@@ -118,71 +118,90 @@ plframe_error_t plframe_cursor_thread_init (plframe_cursor_t *cursor, thread_t t
     }
     
     /* Perform standard initialization and return result */
-    return plframe_cursor_init(cursor, uap);
+    return plframe_cursor_init(cursor, uap, image_list);
 }
 
+//            /* No frame data has been loaded, fetch it from register state */
+//        {   kr = plframe_read_addr((void *) cursor->uap->uc_mcontext->__ss.__rbp, cursor->fp, sizeof(cursor->fp));
+//        } else {
+//            /* Frame data loaded, walk the stack */
+//            kr = plframe_read_addr(cursor->fp[0], cursor->fp, sizeof(cursor->fp));}
 
 // PLFrameWalker API
 plframe_error_t plframe_cursor_next (plframe_cursor_t *cursor) {
-#if PL_WALK_STACK_FRAMES_MANUALLY
-    kern_return_t kr;
-    void *prevfp = cursor->fp[0];
-    
-    /* Fetch the next stack address */
+    /* libunwind will always give a correct result for the top frame on the
+       stack, so for the first frame, don't bother cross-checking for a scan. */
     if (cursor->nframe == -1) {
-        /* The first frame is already available, so there's nothing to do */
+        /* The first frame is loaded by unw_init_local(), so no action needed */
         ++cursor->nframe;
-        return PLFRAME_ESUCCESS;
-    } else {
-        if (cursor->fp[0] == NULL) {
-            /* No frame data has been loaded, fetch it from register state */
-            kr = plframe_read_addr((void *) cursor->uap->uc_mcontext->__ss.__rbp, cursor->fp, sizeof(cursor->fp));
-        } else {
-            /* Frame data loaded, walk the stack */
-            kr = plframe_read_addr(cursor->fp[0], cursor->fp, sizeof(cursor->fp));
-        }
-        ++cursor->nframe;
+PLCF_DEBUG("cursor_next(): first frame; returning success");
     }
-    
-    /* Was the read successful? */
-    if (kr != KERN_SUCCESS)
-        return PLFRAME_EBADFRAME;
-    
-    /* Check for completion */
-    if (cursor->fp[0] == NULL)
-        return PLFRAME_ENOFRAME;
-    
-    /* Is the stack growing in the right direction? */
-    if (cursor->nframe >= 0 && prevfp > cursor->fp[0])
-        return PLFRAME_EBADFRAME;
-    
-    /* New frame fetched */
-    return PLFRAME_ESUCCESS;
-#else
-    int unwr;
-    
-    /* Fetch the next stack address */
-    if (cursor->nframe == -1) {
-        /* The first frame is loaded by unw_init_local(3), so there's nothing
-            to do */
-        ++cursor->nframe;
-        return PLFRAME_ESUCCESS;
-    } else if (cursor->nframe == -2) {
-        /* Off the bottom of the stack, return no more frames. */
-        return PLFRAME_ENOFRAME;
+    /* If libunwind returned an "end stack" on the last call, one of two things
+       has happened:
+       
+       1) It really is the bottom of the stack.
+       2) libunwind didn't find any unwinding info for the current frame and
+          decided to stop trying.
+       
+       The difference between these cases is detected by checking for a
+       duplicated frame in the unwind cursor - if libunwind returns the same
+       frame twice in a row and signals end at the same time, it failed to find
+       any unwinding information. There is no better way to detect this case
+       without digging into libunwind internals.
+    */
+    else if (cursor->unw_endstack) {
+        /* Read the address directly from libunwind, as calling our own register
+           reader might read a more current one from a stack scan. */
+        unw_word_t reg;
+        
+        unw_get_reg(&cursor->unwcrsr, UNW_REG_IP, &reg);
+PLCF_DEBUG("cursor_next(): libunwind signaled end; checking current IP %llx against last unwind IP %llx", (uint64_t)reg, (uint64_t)cursor->last_unwind_address);
+        if (cursor->last_unwind_address == reg) {
+            x86_thread_state64_t state;
+            /* libunwind returned a duplicate on stack end; try a stack scan.
+               Reset the end stack flag so the next frame will try libunwind
+               again. */
+PLCF_DEBUG("cursor_next(): duplicate address detected, trying stack scan and resetting libunwind");
+            cursor->unw_endstack = false;
+            // XXX IMPLEMENT ME STACK SCAN - SET last_valid_frame HERE XXX
+            ++cursor->nframe;
+            return PLFRAME_ENOFRAME;
+            
+            /* Reset libunwind using the results from the stack scan by
+               shoehorning the valid address into a new context pointer. Again,
+               this is undocumented, unsupported, and ugly. */
+            state = cursor->uap->uc_mcontext->__ss;
+            state.__rip = cursor->last_valid_frame;
+            return plframe_error_from_unwerror(unw_init_local(&cursor->unwcrsr, (unw_context_t *)&state));
+        } else {
+PLCF_DEBUG("cursor_next(): libunwind saw legitimate stack end, ending unwind");
+            /* libunwind did not return a duplicate; this really is the end of
+               the stack */
+            return PLFRAME_ENOFRAME;
+        }
     } else {
+        int unwr;
+        
+        /* libunwind hasn't signaled a stack end yet; record the last address
+           retrieved from it as valid */
+        unw_get_reg(&cursor->unwcrsr, UNW_REG_IP, &cursor->last_unwind_address);
+PLCF_DEBUG("cursor_next(): libunwind context is still valid; record frame %llx and step via libunwind", (uint64_t)cursor->last_unwind_address);
         unwr = unw_step(&cursor->unwcrsr);
         ++cursor->nframe;
+        if (unwr < 0) {
+PLCF_DEBUG("cursor_next(): libunwind error %d", unwr);
+            return plframe_error_from_unwerror(unwr);
+        } else {
+            if (unwr == 0) {
+                /* libunwind saw the end of the stack or a lack of unwind info;
+                   flag it for a check next time 'round */
+                cursor->unw_endstack = true;
+            }
+            unw_get_reg(&cursor->unwcrsr, UNW_REG_IP, &cursor->last_valid_frame);
+PLCF_DEBUG("cursor_next(): libunwind stepped successfully, recording current address %llx as valid frame", (uint64_t)cursor->last_valid_frame);
+        }
     }
-    
-    if (unwr == 0) {
-        cursor->nframe = -2; /* signal no more frames */
-    } else if (unwr < 0) {
-        return plframe_error_from_unwerror(unwr);
-    }
-
     return PLFRAME_ESUCCESS;
-#endif
 }
 
 
@@ -194,93 +213,14 @@ plframe_error_t plframe_cursor_next (plframe_cursor_t *cursor) {
 
 plframe_error_t plframe_get_reg (plframe_cursor_t *cursor, plframe_regnum_t regnum, plframe_greg_t *reg) {
     ucontext_t *uap = cursor->uap;
-
-#if PL_WALK_STACK_FRAMES_MANUALLY
-    
-    /* Supported register for this context state? */
-    if (cursor->fp[0] != NULL) {
-        if (regnum == PLFRAME_X86_64_RIP) {
-            *reg = (plframe_greg_t) cursor->fp[1];
-            return PLFRAME_ESUCCESS;
-        }
-        
-        return PLFRAME_ENOTSUP;
-    }
-
-    switch (regnum) {
-        case PLFRAME_X86_64_RAX:
-            RETGEN(rax, ss, uap, reg);
-
-        case PLFRAME_X86_64_RBX:
-            RETGEN(rbx, ss, uap, reg);
-
-        case PLFRAME_X86_64_RCX:
-            RETGEN(rcx, ss, uap, reg);
-            
-        case PLFRAME_X86_64_RDX:
-            RETGEN(rdx, ss, uap, reg);
-            
-        case PLFRAME_X86_64_RDI:
-            RETGEN(rdi, ss, uap, reg);
-            
-        case PLFRAME_X86_64_RSI:
-            RETGEN(rsi, ss, uap, reg);
-            
-        case PLFRAME_X86_64_RBP:
-            RETGEN(rbp, ss, uap, reg);
-            
-        case PLFRAME_X86_64_RSP:
-            RETGEN(rsp, ss, uap, reg);
-            
-        case PLFRAME_X86_64_R10:
-            RETGEN(r10, ss, uap, reg);
-            
-        case PLFRAME_X86_64_R11:
-            RETGEN(r11, ss, uap, reg);
-            
-        case PLFRAME_X86_64_R12:
-            RETGEN(r12, ss, uap, reg);
-            
-        case PLFRAME_X86_64_R13:
-            RETGEN(r13, ss, uap, reg);
-            
-        case PLFRAME_X86_64_R14:    
-            RETGEN(r14, ss, uap, reg);
-            
-        case PLFRAME_X86_64_R15:
-            RETGEN(r15, ss, uap, reg);
-            
-        case PLFRAME_X86_64_RIP:
-            RETGEN(rip, ss, uap, reg);
-            
-        case PLFRAME_X86_64_RFLAGS:
-            RETGEN(rflags, ss, uap, reg);
-            
-        case PLFRAME_X86_64_CS:
-            RETGEN(cs, ss, uap, reg);
-            
-        case PLFRAME_X86_64_FS:
-            RETGEN(fs, ss, uap, reg);
-            
-        case PLFRAME_X86_64_GS:
-            RETGEN(gs, ss, uap, reg);
-            
-        default:
-            // Unsupported register
-            break;
-    }
-#else
     unw_regnum_t unwreg;
     unw_word_t regval;
     int result;
     
     if (cursor->nframe != 0) {
         if (regnum == PLFRAME_X86_64_RIP) {
-            result = unw_get_reg(&cursor->unwcrsr, UNW_REG_IP, &regval);
-            if (result == UNW_ESUCCESS) {
-                *reg = regval;
-            }
-            return plframe_error_from_unwerror(result);
+            *reg = cursor->last_valid_frame;
+            return PLFRAME_ESUCCESS;
         }
         return PLFRAME_ENOTSUP;
     }
@@ -337,8 +277,6 @@ plframe_error_t plframe_get_reg (plframe_cursor_t *cursor, plframe_regnum_t regn
     } else {
         return plframe_error_from_unwerror(result);
     }
-    
-#endif
     
     return PLFRAME_ENOTSUP;
 }

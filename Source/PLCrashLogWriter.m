@@ -705,7 +705,7 @@ static size_t plcrash_writer_write_thread_register (plcrash_async_file_t *file, 
  * @param file Output file
  * @param cursor The cursor from which to acquire frame data.
  */
-static size_t plcrash_writer_write_thread_registers (plcrash_async_file_t *file, ucontext_t *uap) {
+static size_t plcrash_writer_write_thread_registers (plcrash_async_file_t *file, ucontext_t *uap, plcrash_log_writer_t *writer) {
     plframe_cursor_t cursor;
     plframe_error_t frame_err;
     uint32_t regCount;
@@ -715,7 +715,7 @@ static size_t plcrash_writer_write_thread_registers (plcrash_async_file_t *file,
     regCount = PLFRAME_REG_LAST + 1;
 
     /* Create the crashed thread frame cursor */
-    if ((frame_err = plframe_cursor_init(&cursor, uap)) != PLFRAME_ESUCCESS) {
+    if ((frame_err = plframe_cursor_init(&cursor, uap, &writer->image_info.image_list)) != PLFRAME_ESUCCESS) {
         PLCF_DEBUG("Failed to initialize frame cursor for crashed thread: %s", plframe_strerror(frame_err));
         return 0;
     }
@@ -779,7 +779,7 @@ static size_t plcrash_writer_write_thread_frame (plcrash_async_file_t *file, uin
  * @param crashctx Context to use for currently running thread (rather than fetching the thread
  * context, which we've invalidated by running at all)
  */
-static size_t plcrash_writer_write_thread (plcrash_async_file_t *file, thread_t thread, uint32_t thread_number, ucontext_t *crashctx) {
+static size_t plcrash_writer_write_thread (plcrash_async_file_t *file, thread_t thread, uint32_t thread_number, ucontext_t *crashctx, plcrash_log_writer_t *writer) {
     size_t rv = 0;
     plframe_cursor_t cursor;
     plframe_error_t ferr;
@@ -807,9 +807,9 @@ static size_t plcrash_writer_write_thread (plcrash_async_file_t *file, thread_t 
         {
             /* Use the crashctx if we're running on the crashed thread */
             if (crashed_thread) {
-                ferr = plframe_cursor_init(&cursor, crashctx);
+                ferr = plframe_cursor_init(&cursor, crashctx, &writer->image_info.image_list);
             } else {
-                ferr = plframe_cursor_thread_init(&cursor, thread);
+                ferr = plframe_cursor_thread_init(&cursor, thread, &writer->image_info.image_list);
             }
 
             /* Did cursor initialization succeed? If not, it is impossible to proceed */
@@ -849,7 +849,7 @@ static size_t plcrash_writer_write_thread (plcrash_async_file_t *file, thread_t 
 
     /* Dump registers for the crashed thread */
     if (crashed_thread) {
-        rv += plcrash_writer_write_thread_registers(file, crashctx);
+        rv += plcrash_writer_write_thread_registers(file, crashctx, writer);
     }
 
     return rv;
@@ -1089,11 +1089,11 @@ plcrash_error_t plcrash_log_writer_write (plcrash_log_writer_t *writer, plcrash_
             }
             
             /* Determine the size */
-            size = plcrash_writer_write_thread(NULL, thread, i, crashctx);
+            size = plcrash_writer_write_thread(NULL, thread, i, crashctx, writer);
             
             /* Write message */
             plcrash_writer_pack(file, PLCRASH_PROTO_THREADS_ID, PLPROTOBUF_C_TYPE_MESSAGE, &size);
-            plcrash_writer_write_thread(file, thread, i, crashctx);
+            plcrash_writer_write_thread(file, thread, i, crashctx, writer);
 
             /* Resume the thread */
             if (suspend_thread)
