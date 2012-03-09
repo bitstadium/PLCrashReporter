@@ -28,17 +28,44 @@
 
 #import <Foundation/Foundation.h>
 #import "CrashReporter.h"
+#import <pthread.h>
 
 /* A custom post-crash callback */
 void post_crash_callback (siginfo_t *info, ucontext_t *uap, void *context) {
     // this is not async-safe, but this is a test implementation
-    NSLog(@"post crash callback: signo=%d, uap=%p, context=%p", info->si_signo, uap, context);
+//    NSLog(@"post crash callback: signo=%d, uap=%p, context=%p", info->si_signo, uap, context);
 }
 
+void thread_stackFrame3 (int crashThreaded) {
+    /* Trigger a threaded crash */
+    if (crashThreaded)
+    	printf("%s", (char *)0x123124);
+	    //((char *)NULL)[2] = 0;
+    sleep(2);
+}
 
-void stackFrame (void) {
+void thread_stackFrame2 (int crashThreaded) {
+	thread_stackFrame3(crashThreaded);
+}
+
+void *thread_stackFrame (void *arg) {
+	thread_stackFrame2(arg ? 1 : 0);
+    return NULL;
+}
+
+void stackFrame2 (int crashThreaded) {
+    pthread_t thread;
+    
+    pthread_create(&thread, NULL, thread_stackFrame, crashThreaded ? &thread : NULL);
+    
     /* Trigger a crash */
-    ((char *)NULL)[1] = 0;
+    if (!crashThreaded)
+		((char *)NULL)[1] = 0;
+    sleep(2);
+}
+
+void stackFrame (int crashThreaded) {
+	stackFrame2(crashThreaded);
 }
 
 /* If a crash report exists, make it accessible via iTunes document sharing. This is a no-op on Mac OS X. */
@@ -94,7 +121,7 @@ int main (int argc, char *argv[]) {
     }
 
     /* Add another stack frame */
-    stackFrame();
+    stackFrame(argc > 1);
 
     [pool release];
 }
