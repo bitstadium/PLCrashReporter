@@ -131,6 +131,8 @@ static bool plframe_cursor_address_looks_valid (plframe_cursor_t *cursor, uintpt
        range. */
     if ((address & 0xFFFFFFFF00000000) == 0)
         return false;
+    if (cursor->image_list == NULL)
+        return false;
     
     plcrash_async_image_t *entry = NULL;
     

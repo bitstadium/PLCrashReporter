@@ -200,7 +200,7 @@
         info.si_status = 0;
         
         /* Steal the test thread's stack for iteration */
-        plframe_cursor_thread_init(&cursor, pthread_mach_thread_np(_thr_args.thread));
+        plframe_cursor_thread_init(&cursor, pthread_mach_thread_np(_thr_args.thread), NULL);
     }
 
     /* Open the output file */
