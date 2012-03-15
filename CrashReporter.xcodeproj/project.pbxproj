@@ -355,6 +355,21 @@
 		2D0E104D1141F7DC00CE1BD6 /* PLCrashReportProcessInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 2D0E10451141F7DC00CE1BD6 /* PLCrashReportProcessInfo.m */; };
 		2D0E104E1141F7DC00CE1BD6 /* PLCrashReportProcessInfo.h in Headers */ = {isa = PBXBuildFile; fileRef = 2D0E10441141F7DC00CE1BD6 /* PLCrashReportProcessInfo.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		2D0E104F1141F7DC00CE1BD6 /* PLCrashReportProcessInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 2D0E10451141F7DC00CE1BD6 /* PLCrashReportProcessInfo.m */; };
+		FA2EB20E1510E687000B6687 /* libtinyunwind.h in Headers */ = {isa = PBXBuildFile; fileRef = FA2EB20D1510E687000B6687 /* libtinyunwind.h */; };
+		FA2EB2101510EE3C000B6687 /* libtinyunwind.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB20F1510EE3C000B6687 /* libtinyunwind.c */; };
+		FA2EB2121510EE78000B6687 /* libtinyunwind_internal.h in Headers */ = {isa = PBXBuildFile; fileRef = FA2EB2111510EE78000B6687 /* libtinyunwind_internal.h */; };
+		FA2EB2171511ABE2000B6687 /* libtinyunwind_getcontext.s in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB2161511ABE1000B6687 /* libtinyunwind_getcontext.s */; };
+		FA2EB2231511C1B5000B6687 /* libtinyunwind_dwarf.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB2221511C1B5000B6687 /* libtinyunwind_dwarf.c */; };
+		FA2EB2261511C37E000B6687 /* libtinyunwind_compact.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB2251511C37D000B6687 /* libtinyunwind_compact.c */; };
+		FA2EB2281511C3A8000B6687 /* libtinyunwind_framepointer.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB2271511C3A8000B6687 /* libtinyunwind_framepointer.c */; };
+		FA2EB22A1511C3C5000B6687 /* libtinyunwind_stackscan.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB2291511C3C5000B6687 /* libtinyunwind_stackscan.c */; };
+		FA2EB22C1511CEA5000B6687 /* libtinyunwind_imagelist.h in Headers */ = {isa = PBXBuildFile; fileRef = FA2EB22B1511CEA5000B6687 /* libtinyunwind_imagelist.h */; };
+		FA2EB22E1511D41C000B6687 /* libtinyunwind_image.h in Headers */ = {isa = PBXBuildFile; fileRef = FA2EB22D1511D41B000B6687 /* libtinyunwind_image.h */; };
+		FA2EB2301511D852000B6687 /* libtinyunwind_image.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB22F1511D852000B6687 /* libtinyunwind_image.c */; };
+		FA2EB2321511DEC1000B6687 /* libtinyunwind_imagelist.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB2311511DEC1000B6687 /* libtinyunwind_imagelist.c */; };
+		FA2EB2351511E857000B6687 /* libtinyunwind.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FA2EB2071510E518000B6687 /* libtinyunwind.a */; };
+		FA2EB2381511E863000B6687 /* libtinyunwind.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FA2EB2071510E518000B6687 /* libtinyunwind.a */; };
+		FA2EB23C1511EBFE000B6687 /* libtinyunwind.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FA2EB2071510E518000B6687 /* libtinyunwind.a */; };
 		FA43C04D15095ED7002483C0 /* PLCrashMachOImage.h in Headers */ = {isa = PBXBuildFile; fileRef = FA43C04B15095ED7002483C0 /* PLCrashMachOImage.h */; };
 		FA43C04E15095ED7002483C0 /* PLCrashMachOImage.h in Headers */ = {isa = PBXBuildFile; fileRef = FA43C04B15095ED7002483C0 /* PLCrashMachOImage.h */; };
 		FA43C04F15095ED7002483C0 /* PLCrashMachOImage.h in Headers */ = {isa = PBXBuildFile; fileRef = FA43C04B15095ED7002483C0 /* PLCrashMachOImage.h */; };
@@ -605,6 +620,27 @@
 			remoteGlobalIDString = 8DC2EF4F0486A6940098B216;
 			remoteInfo = "CrashReporter-MacOSX";
 		};
+		FA2EB2331511E852000B6687 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0867D690FE84028FC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FA2EB2061510E518000B6687;
+			remoteInfo = tinyunwind;
+		};
+		FA2EB2361511E85B000B6687 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0867D690FE84028FC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FA2EB2061510E518000B6687;
+			remoteInfo = tinyunwind;
+		};
+		FA2EB23D1511EC02000B6687 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0867D690FE84028FC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FA2EB2061510E518000B6687;
+			remoteInfo = tinyunwind;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -729,6 +765,19 @@
 		2D0E10451141F7DC00CE1BD6 /* PLCrashReportProcessInfo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLCrashReportProcessInfo.m; sourceTree = "<group>"; usesTabs = 0; };
 		8DC2EF5A0486A6940098B216 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Resources/Info.plist; sourceTree = "<group>"; };
 		8DC2EF5B0486A6940098B216 /* CrashReporter.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = CrashReporter.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		FA2EB2071510E518000B6687 /* libtinyunwind.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libtinyunwind.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		FA2EB20D1510E687000B6687 /* libtinyunwind.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = libtinyunwind.h; path = tinyunwind/libtinyunwind.h; sourceTree = "<group>"; usesTabs = 0; };
+		FA2EB20F1510EE3C000B6687 /* libtinyunwind.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = libtinyunwind.c; path = tinyunwind/libtinyunwind.c; sourceTree = "<group>"; usesTabs = 0; };
+		FA2EB2111510EE78000B6687 /* libtinyunwind_internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = libtinyunwind_internal.h; path = tinyunwind/libtinyunwind_internal.h; sourceTree = "<group>"; usesTabs = 0; };
+		FA2EB2161511ABE1000B6687 /* libtinyunwind_getcontext.s */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; name = libtinyunwind_getcontext.s; path = tinyunwind/libtinyunwind_getcontext.s; sourceTree = "<group>"; usesTabs = 0; };
+		FA2EB2221511C1B5000B6687 /* libtinyunwind_dwarf.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = libtinyunwind_dwarf.c; path = tinyunwind/libtinyunwind_dwarf.c; sourceTree = "<group>"; usesTabs = 0; };
+		FA2EB2251511C37D000B6687 /* libtinyunwind_compact.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = libtinyunwind_compact.c; path = tinyunwind/libtinyunwind_compact.c; sourceTree = "<group>"; usesTabs = 0; };
+		FA2EB2271511C3A8000B6687 /* libtinyunwind_framepointer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = libtinyunwind_framepointer.c; path = tinyunwind/libtinyunwind_framepointer.c; sourceTree = "<group>"; usesTabs = 0; };
+		FA2EB2291511C3C5000B6687 /* libtinyunwind_stackscan.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = libtinyunwind_stackscan.c; path = tinyunwind/libtinyunwind_stackscan.c; sourceTree = "<group>"; usesTabs = 0; };
+		FA2EB22B1511CEA5000B6687 /* libtinyunwind_imagelist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = libtinyunwind_imagelist.h; path = tinyunwind/libtinyunwind_imagelist.h; sourceTree = "<group>"; usesTabs = 0; };
+		FA2EB22D1511D41B000B6687 /* libtinyunwind_image.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = libtinyunwind_image.h; path = tinyunwind/libtinyunwind_image.h; sourceTree = "<group>"; usesTabs = 0; };
+		FA2EB22F1511D852000B6687 /* libtinyunwind_image.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = libtinyunwind_image.c; path = tinyunwind/libtinyunwind_image.c; sourceTree = "<group>"; usesTabs = 0; };
+		FA2EB2311511DEC1000B6687 /* libtinyunwind_imagelist.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = libtinyunwind_imagelist.c; path = tinyunwind/libtinyunwind_imagelist.c; sourceTree = "<group>"; usesTabs = 0; };
 		FA43C04B15095ED7002483C0 /* PLCrashMachOImage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLCrashMachOImage.h; sourceTree = "<group>"; };
 		FA43C04C15095ED7002483C0 /* PLCrashMachOImage.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = PLCrashMachOImage.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -783,6 +832,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FA2EB23C1511EBFE000B6687 /* libtinyunwind.a in Frameworks */,
 				05CD34380EEA60BB000FDE88 /* CrashReporter.framework in Frameworks */,
 				05654F790EFA5B54004283F5 /* CoreServices.framework in Frameworks */,
 			);
@@ -817,6 +867,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FA2EB2351511E857000B6687 /* libtinyunwind.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -832,8 +883,16 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FA2EB2381511E863000B6687 /* libtinyunwind.a in Frameworks */,
 				05CD32110EE93AF9000FDE88 /* Foundation.framework in Frameworks */,
 				05654F770EFA5B54004283F5 /* CoreServices.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FA2EB2041510E518000B6687 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -856,6 +915,7 @@
 				058812B91040582D009128FB /* CrashReporter.framework */,
 				052A45CF136353FB00987004 /* DemoCrash-iOS-Device.app */,
 				052A464F136355FD00987004 /* DemoCrash-iOS-Simulator.app */,
+				FA2EB2071510E518000B6687 /* libtinyunwind.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1190,6 +1250,7 @@
 				05F40CF00EF7ABD6008050CF /* Crash Demo */,
 				05E7321B0EFA1BC4005EDFB7 /* plcrashutil */,
 				050DE2A70F61BD6D00152ED3 /* fuzz */,
+				FA2EB20C1510E659000B6687 /* libtinyunwind */,
 			);
 			path = Source;
 			sourceTree = "<group>";
@@ -1215,6 +1276,25 @@
 			children = (
 			);
 			name = "Other Sources";
+			sourceTree = "<group>";
+		};
+		FA2EB20C1510E659000B6687 /* libtinyunwind */ = {
+			isa = PBXGroup;
+			children = (
+				FA2EB20D1510E687000B6687 /* libtinyunwind.h */,
+				FA2EB2111510EE78000B6687 /* libtinyunwind_internal.h */,
+				FA2EB20F1510EE3C000B6687 /* libtinyunwind.c */,
+				FA2EB2161511ABE1000B6687 /* libtinyunwind_getcontext.s */,
+				FA2EB2221511C1B5000B6687 /* libtinyunwind_dwarf.c */,
+				FA2EB2251511C37D000B6687 /* libtinyunwind_compact.c */,
+				FA2EB2271511C3A8000B6687 /* libtinyunwind_framepointer.c */,
+				FA2EB2291511C3C5000B6687 /* libtinyunwind_stackscan.c */,
+				FA2EB22D1511D41B000B6687 /* libtinyunwind_image.h */,
+				FA2EB22F1511D852000B6687 /* libtinyunwind_image.c */,
+				FA2EB22B1511CEA5000B6687 /* libtinyunwind_imagelist.h */,
+				FA2EB2311511DEC1000B6687 /* libtinyunwind_imagelist.c */,
+			);
+			name = libtinyunwind;
 			sourceTree = "<group>";
 		};
 		FA43C04915095EA4002483C0 /* Mach-O Image Parsing */ = {
@@ -1371,6 +1451,17 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		FA2EB2051510E518000B6687 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FA2EB20E1510E687000B6687 /* libtinyunwind.h in Headers */,
+				FA2EB2121510EE78000B6687 /* libtinyunwind_internal.h in Headers */,
+				FA2EB22C1511CEA5000B6687 /* libtinyunwind_imagelist.h in Headers */,
+				FA2EB22E1511D41C000B6687 /* libtinyunwind_image.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
@@ -1499,6 +1590,7 @@
 				059670E20EEFAD8C008A0601 /* PBXBuildRule */,
 			);
 			dependencies = (
+				FA2EB23E1511EC02000B6687 /* PBXTargetDependency */,
 				05CD342A0EEA5FFA000FDE88 /* PBXTargetDependency */,
 			);
 			name = "Tests-MacOSX";
@@ -1574,6 +1666,7 @@
 				05E7320E0EFA1B60005EDFB7 /* PBXBuildRule */,
 			);
 			dependencies = (
+				FA2EB2341511E852000B6687 /* PBXTargetDependency */,
 			);
 			name = "CrashReporter-MacOSX-Static";
 			productName = "CrashReporter-MacOSX-Static";
@@ -1612,12 +1705,30 @@
 				05F411F10EF8DF79008050CF /* PBXBuildRule */,
 			);
 			dependencies = (
+				FA2EB2371511E85B000B6687 /* PBXTargetDependency */,
 			);
 			name = "CrashReporter-MacOSX";
 			productInstallPath = "$(HOME)/Library/Frameworks";
 			productName = CrashReporter;
 			productReference = 8DC2EF5B0486A6940098B216 /* CrashReporter.framework */;
 			productType = "com.apple.product-type.framework";
+		};
+		FA2EB2061510E518000B6687 /* tinyunwind */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FA2EB2081510E518000B6687 /* Build configuration list for PBXNativeTarget "tinyunwind" */;
+			buildPhases = (
+				FA2EB2031510E518000B6687 /* Sources */,
+				FA2EB2041510E518000B6687 /* Frameworks */,
+				FA2EB2051510E518000B6687 /* Headers */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = tinyunwind;
+			productName = tinyunwind;
+			productReference = FA2EB2071510E518000B6687 /* libtinyunwind.a */;
+			productType = "com.apple.product-type.library.static";
 		};
 /* End PBXNativeTarget section */
 
@@ -1645,6 +1756,7 @@
 			targets = (
 				058812D410405908009128FB /* Disk Image */,
 				05CD31680EE939D0000FDE88 /* CrashReporter */,
+				FA2EB2061510E518000B6687 /* tinyunwind */,
 				05E731F20EFA1AAB005EDFB7 /* CrashReporter-MacOSX-Static */,
 				8DC2EF4F0486A6940098B216 /* CrashReporter-MacOSX */,
 				058812B81040582D009128FB /* CrashReporter-iOS */,
@@ -2085,6 +2197,21 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		FA2EB2031510E518000B6687 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FA2EB2101510EE3C000B6687 /* libtinyunwind.c in Sources */,
+				FA2EB2171511ABE2000B6687 /* libtinyunwind_getcontext.s in Sources */,
+				FA2EB2231511C1B5000B6687 /* libtinyunwind_dwarf.c in Sources */,
+				FA2EB2261511C37E000B6687 /* libtinyunwind_compact.c in Sources */,
+				FA2EB2281511C3A8000B6687 /* libtinyunwind_framepointer.c in Sources */,
+				FA2EB22A1511C3C5000B6687 /* libtinyunwind_stackscan.c in Sources */,
+				FA2EB2301511D852000B6687 /* libtinyunwind_image.c in Sources */,
+				FA2EB2321511DEC1000B6687 /* libtinyunwind_imagelist.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -2192,6 +2319,21 @@
 			isa = PBXTargetDependency;
 			target = 8DC2EF4F0486A6940098B216 /* CrashReporter-MacOSX */;
 			targetProxy = 05F40CFC0EF7AC9D008050CF /* PBXContainerItemProxy */;
+		};
+		FA2EB2341511E852000B6687 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FA2EB2061510E518000B6687 /* tinyunwind */;
+			targetProxy = FA2EB2331511E852000B6687 /* PBXContainerItemProxy */;
+		};
+		FA2EB2371511E85B000B6687 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FA2EB2061510E518000B6687 /* tinyunwind */;
+			targetProxy = FA2EB2361511E85B000B6687 /* PBXContainerItemProxy */;
+		};
+		FA2EB23E1511EC02000B6687 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FA2EB2061510E518000B6687 /* tinyunwind */;
+			targetProxy = FA2EB23D1511EC02000B6687 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -3024,6 +3166,42 @@
 			};
 			name = Release;
 		};
+		FA2EB2091510E518000B6687 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				COPY_PHASE_STRIP = NO;
+				EFFECTIVE_PLATFORM_NAME = "-MacOSX";
+				EXECUTABLE_PREFIX = lib;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_MODEL_TUNING = G5;
+				GENERATE_MASTER_OBJECT_FILE = YES;
+				INSTALL_PATH = /usr/local/lib;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		FA2EB20A1510E518000B6687 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				EFFECTIVE_PLATFORM_NAME = "-MacOSX";
+				EXECUTABLE_PREFIX = lib;
+				GCC_MODEL_TUNING = G5;
+				GCC_PREPROCESSOR_DEFINITIONS = "NDEBUG=1";
+				GENERATE_MASTER_OBJECT_FILE = YES;
+				INSTALL_PATH = /usr/local/lib;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -3176,6 +3354,15 @@
 			buildConfigurations = (
 				1DEB91B208733DA50010E9CD /* Debug */,
 				1DEB91B308733DA50010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FA2EB2081510E518000B6687 /* Build configuration list for PBXNativeTarget "tinyunwind" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FA2EB2091510E518000B6687 /* Debug */,
+				FA2EB20A1510E518000B6687 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

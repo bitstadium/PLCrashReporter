@@ -31,37 +31,28 @@
 
 
 /**
- * Return the plframe_error_t corresponding to the given libunwind(3) error code
+ * Return the plframe_error_t corresponding to the given libtinyunwind error code
  */
-plframe_error_t plframe_error_from_unwerror(int error) {
+plframe_error_t plframe_error_from_tinyunwerror(int error) {
     switch (error) {
-        case UNW_ESUCCESS:
+        case TINYUNW_ESUCCESS:
             return PLFRAME_ESUCCESS;
-        case UNW_EUNSPEC:
+        case TINYUNW_EUNSPEC:
             return PLFRAME_EUNKNOWN;
-        case UNW_ENOMEM:
+        case TINYUNW_ENOMEM:
             /* Close equivelance; memory allocation should not be happening. */
             return PLFRAME_INTERNAL;
-        case UNW_EBADREG:
+        case TINYUNW_EBADREG:
             return PLFRAME_EBADREG;
-        case UNW_EREADONLYREG:
-            return PLFRAME_ENOTSUP;
-        case UNW_ESTOPUNWIND:
-            /* The meaning of this error is unclear. */
-            return PLFRAME_EUNKNOWN;
-        case UNW_EINVALIDIP:
+        case TINYUNW_EINVALIDIP:
             /* Close equivelance. */
             return PLFRAME_EBADFRAME;
-        case UNW_EBADFRAME:
+        case TINYUNW_EBADFRAME:
             return PLFRAME_EBADFRAME;
-        case UNW_EINVAL:
+        case TINYUNW_EINVAL:
             return PLFRAME_ENOTSUP;
-        case UNW_EBADVERSION:
-            /* Close equivelance. */
-            return PLFRAME_ENOTSUP;
-        case UNW_ENOINFO:
-            /* Close equivelance. */
-            return PLFRAME_ENOTSUP;
+        case TINYUNW_ENOFRAME:
+            return PLFRAME_ENOFRAME;
         default:
             return PLFRAME_EUNKNOWN;
     }

@@ -35,7 +35,7 @@
 
 #import <mach/mach.h>
 
-#import <libunwind.h>
+#import "libtinyunwind.h"
 
 #import "PLCrashAsync.h"
 #import "PLCrashAsyncImage.h"
@@ -112,25 +112,9 @@ typedef struct plframe_cursor {
     
     /** Thread context */
     ucontext_t *uap;
-    
-    /** Address of most recent valid frame from any source */
-    plframe_greg_t last_valid_frame;
-    
-    /** libunwind context */
-    unw_cursor_t unwcrsr;
-    
-    /** Flag for an "end stack" return from libunwind or stack scan */
-    bool endstack;
-    
-    /** Cache of the last frame address received from libunwind, used to detect
-        libunwind duplicates */
-    plframe_greg_t last_unwind_address;
-    
-    /** Saved stack pointer for stack scans */
-    plframe_greg_t last_stack_pointer;
-    
-    /** Binary images list for stack scans */
-    plcrash_async_image_list_t *image_list;
+
+    /** libtinyunwind context */
+    tinyunw_cursor_t unwind_cursor;
     
     /** Stack frame data */
     void *fp[PLFRAME_STACKFRAME_LEN];
@@ -175,7 +159,7 @@ typedef struct plframe_test_thread {
 
 
 /* Shared functions */
-plframe_error_t plframe_error_from_unwerror(int error);
+plframe_error_t plframe_error_from_tinyunwerror(int error);
 const char *plframe_strerror (plframe_error_t error);
 kern_return_t plframe_read_addr (const void *source, void *dest, size_t len);
 
