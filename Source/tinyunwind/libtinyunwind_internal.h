@@ -28,7 +28,7 @@
  */
 
 #import "libtinyunwind.h"
-#import "libtinyunwind_imagelist.h"
+#import "libtinyunwind_image.h"
 #import <assert.h>
 
 /**
@@ -68,11 +68,25 @@ typedef struct tinyunw_real_cursor_t tinyunw_real_cursor_t;
 
 __private_extern__ bool tinyunw_tracking_images;
 __private_extern__ bool tinyunw_dyld_callbacks_installed;
-__private_extern__ tinyunw_image_list_t tinyunw_loaded_images_list;
+__private_extern__ tinyunw_async_list_t tinyunw_loaded_images_list;
 
+/**
+ * @internal
+ * Read memory without causing access violations.
+ */
 int tinyunw_read_unsafe_memory(const void *pointer, void *destination, size_t len);
+
+/**
+ * @internal
+ * Try various methods of stepping through a stack.
+ */
 int tinyunw_try_step_dwarf(tinyunw_real_cursor_t *cursor);
 int tinyunw_try_step_unwind(tinyunw_real_cursor_t *cursor);
 int tinyunw_try_step_fp(tinyunw_real_cursor_t *cursor);
 int tinyunw_try_step_stackscan(tinyunw_real_cursor_t *cursor);
+
+/**
+ * @internal
+ * Return the image containing the given address, if any.
+ */
 tinyunw_image_t *tinyunw_get_image_containing_address(uintptr_t address);

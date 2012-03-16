@@ -27,39 +27,46 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#import "libtinyunwind_image.h"
+#import "libtinyunwind.h"
+#import <libkern/OSAtomic.h>
 
-struct tinyunw_image_entry_t {
-    /** The image data */
-    tinyunw_image_t image;
+struct tinyunw_async_list_entry_t {
+    /** The list data. This pointer is NOT considered owned by the entry. */
+    void *data;
 
-    /** The previous image in the list, or NULL. */
-    struct tinyunw_image_entry_t *prev;
+    /** The previous entry in the list, or NULL. */
+    struct tinyunw_async_list_entry_t *prev;
     
-    /** The next image in the list, or NULL. */
-    struct tinyunw_image_entry_t *next;
+    /** The next entry in the list, or NULL. */
+    struct tinyunw_async_list_entry_t *next;
 };
-typedef struct tinyunw_image_entry_t tinyunw_image_entry_t;
+typedef struct tinyunw_async_list_entry_t tinyunw_async_list_entry_t;
 
-struct tinyunw_image_list_t {
+struct tinyunw_async_list_t {
     /** The lock used by writers. No lock is required for readers. */
     OSSpinLock write_lock;
 
     /** The head of the list, or NULL if the list is empty. Must only be used to iterate or delete entries. */
-    tinyunw_image_entry_t *head;
+    tinyunw_async_list_entry_t *head;
 
     /** The tail of the list, or NULL if the list is empty. Must only be used to append new entries. */
-    tinyunw_image_entry_t *tail;
+    tinyunw_async_list_entry_t *tail;
 
     /** The list reference count. No nodes will be deallocated while the count is greater than 0. If the count
      * reaches 0, all nodes in the free list will be deallocated. */
     int32_t refcount;
 };
-typedef struct tinyunw_image_list_t tinyunw_image_list_t;
+typedef struct tinyunw_async_list_t tinyunw_async_list_t;
 
-void tinyunw_image_list_init (tinyunw_image_list_t *list);
-void tinyunw_image_list_free (tinyunw_image_list_t *list);
-void tinyunw_image_list_append (tinyunw_image_list_t *list, tinyunw_image_t *image);
-void tinyunw_image_list_remove (tinyunw_image_list_t *list, uintptr_t header);
-void tinyunw_image_list_setreading (tinyunw_image_list_t *list, bool enable);
-tinyunw_image_entry_t *tinyunw_image_list_next(tinyunw_image_list_t *list, tinyunw_image_entry_t *current);
+/**
+  * @note The async list routines do not take ownership of pointers. They will not
+  * be released on removal from the list or list deallocation. You are responsible
+  * for ensuring your pointers do not leak.
+  */
+
+void tinyunw_async_list_init (tinyunw_async_list_t *list);
+void tinyunw_async_list_free (tinyunw_async_list_t *list);
+void tinyunw_async_list_append (tinyunw_async_list_t *list, void *data);
+void tinyunw_async_list_remove (tinyunw_async_list_t *list, void *data);
+void tinyunw_async_list_setreading (tinyunw_async_list_t *list, bool enable);
+tinyunw_async_list_entry_t *tinyunw_async_list_next(tinyunw_async_list_t *list, tinyunw_async_list_entry_t *current);

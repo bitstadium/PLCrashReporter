@@ -363,13 +363,14 @@
 		FA2EB2261511C37E000B6687 /* libtinyunwind_compact.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB2251511C37D000B6687 /* libtinyunwind_compact.c */; };
 		FA2EB2281511C3A8000B6687 /* libtinyunwind_framepointer.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB2271511C3A8000B6687 /* libtinyunwind_framepointer.c */; };
 		FA2EB22A1511C3C5000B6687 /* libtinyunwind_stackscan.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB2291511C3C5000B6687 /* libtinyunwind_stackscan.c */; };
-		FA2EB22C1511CEA5000B6687 /* libtinyunwind_imagelist.h in Headers */ = {isa = PBXBuildFile; fileRef = FA2EB22B1511CEA5000B6687 /* libtinyunwind_imagelist.h */; };
+		FA2EB22C1511CEA5000B6687 /* libtinyunwind_asynclist.h in Headers */ = {isa = PBXBuildFile; fileRef = FA2EB22B1511CEA5000B6687 /* libtinyunwind_asynclist.h */; };
 		FA2EB22E1511D41C000B6687 /* libtinyunwind_image.h in Headers */ = {isa = PBXBuildFile; fileRef = FA2EB22D1511D41B000B6687 /* libtinyunwind_image.h */; };
 		FA2EB2301511D852000B6687 /* libtinyunwind_image.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB22F1511D852000B6687 /* libtinyunwind_image.c */; };
-		FA2EB2321511DEC1000B6687 /* libtinyunwind_imagelist.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB2311511DEC1000B6687 /* libtinyunwind_imagelist.c */; };
+		FA2EB2321511DEC1000B6687 /* libtinyunwind_asynclist.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB2311511DEC1000B6687 /* libtinyunwind_asynclist.c */; };
 		FA2EB2351511E857000B6687 /* libtinyunwind.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FA2EB2071510E518000B6687 /* libtinyunwind.a */; };
 		FA2EB2381511E863000B6687 /* libtinyunwind.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FA2EB2071510E518000B6687 /* libtinyunwind.a */; };
 		FA2EB23C1511EBFE000B6687 /* libtinyunwind.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FA2EB2071510E518000B6687 /* libtinyunwind.a */; };
+		FA2EB24715120180000B6687 /* libtinyunwind_dwarf.h in Headers */ = {isa = PBXBuildFile; fileRef = FA2EB2461512017F000B6687 /* libtinyunwind_dwarf.h */; };
 		FA43C04D15095ED7002483C0 /* PLCrashMachOImage.h in Headers */ = {isa = PBXBuildFile; fileRef = FA43C04B15095ED7002483C0 /* PLCrashMachOImage.h */; };
 		FA43C04E15095ED7002483C0 /* PLCrashMachOImage.h in Headers */ = {isa = PBXBuildFile; fileRef = FA43C04B15095ED7002483C0 /* PLCrashMachOImage.h */; };
 		FA43C04F15095ED7002483C0 /* PLCrashMachOImage.h in Headers */ = {isa = PBXBuildFile; fileRef = FA43C04B15095ED7002483C0 /* PLCrashMachOImage.h */; };
@@ -774,10 +775,11 @@
 		FA2EB2251511C37D000B6687 /* libtinyunwind_compact.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = libtinyunwind_compact.c; path = tinyunwind/libtinyunwind_compact.c; sourceTree = "<group>"; usesTabs = 0; };
 		FA2EB2271511C3A8000B6687 /* libtinyunwind_framepointer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = libtinyunwind_framepointer.c; path = tinyunwind/libtinyunwind_framepointer.c; sourceTree = "<group>"; usesTabs = 0; };
 		FA2EB2291511C3C5000B6687 /* libtinyunwind_stackscan.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = libtinyunwind_stackscan.c; path = tinyunwind/libtinyunwind_stackscan.c; sourceTree = "<group>"; usesTabs = 0; };
-		FA2EB22B1511CEA5000B6687 /* libtinyunwind_imagelist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = libtinyunwind_imagelist.h; path = tinyunwind/libtinyunwind_imagelist.h; sourceTree = "<group>"; usesTabs = 0; };
+		FA2EB22B1511CEA5000B6687 /* libtinyunwind_asynclist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = libtinyunwind_asynclist.h; path = tinyunwind/libtinyunwind_asynclist.h; sourceTree = "<group>"; usesTabs = 0; };
 		FA2EB22D1511D41B000B6687 /* libtinyunwind_image.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = libtinyunwind_image.h; path = tinyunwind/libtinyunwind_image.h; sourceTree = "<group>"; usesTabs = 0; };
 		FA2EB22F1511D852000B6687 /* libtinyunwind_image.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = libtinyunwind_image.c; path = tinyunwind/libtinyunwind_image.c; sourceTree = "<group>"; usesTabs = 0; };
-		FA2EB2311511DEC1000B6687 /* libtinyunwind_imagelist.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = libtinyunwind_imagelist.c; path = tinyunwind/libtinyunwind_imagelist.c; sourceTree = "<group>"; usesTabs = 0; };
+		FA2EB2311511DEC1000B6687 /* libtinyunwind_asynclist.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = libtinyunwind_asynclist.c; path = tinyunwind/libtinyunwind_asynclist.c; sourceTree = "<group>"; usesTabs = 0; };
+		FA2EB2461512017F000B6687 /* libtinyunwind_dwarf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = libtinyunwind_dwarf.h; path = tinyunwind/libtinyunwind_dwarf.h; sourceTree = "<group>"; };
 		FA43C04B15095ED7002483C0 /* PLCrashMachOImage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLCrashMachOImage.h; sourceTree = "<group>"; };
 		FA43C04C15095ED7002483C0 /* PLCrashMachOImage.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = PLCrashMachOImage.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -1285,14 +1287,15 @@
 				FA2EB2111510EE78000B6687 /* libtinyunwind_internal.h */,
 				FA2EB20F1510EE3C000B6687 /* libtinyunwind.c */,
 				FA2EB2161511ABE1000B6687 /* libtinyunwind_getcontext.s */,
+				FA2EB2461512017F000B6687 /* libtinyunwind_dwarf.h */,
 				FA2EB2221511C1B5000B6687 /* libtinyunwind_dwarf.c */,
 				FA2EB2251511C37D000B6687 /* libtinyunwind_compact.c */,
 				FA2EB2271511C3A8000B6687 /* libtinyunwind_framepointer.c */,
 				FA2EB2291511C3C5000B6687 /* libtinyunwind_stackscan.c */,
 				FA2EB22D1511D41B000B6687 /* libtinyunwind_image.h */,
 				FA2EB22F1511D852000B6687 /* libtinyunwind_image.c */,
-				FA2EB22B1511CEA5000B6687 /* libtinyunwind_imagelist.h */,
-				FA2EB2311511DEC1000B6687 /* libtinyunwind_imagelist.c */,
+				FA2EB22B1511CEA5000B6687 /* libtinyunwind_asynclist.h */,
+				FA2EB2311511DEC1000B6687 /* libtinyunwind_asynclist.c */,
 			);
 			name = libtinyunwind;
 			sourceTree = "<group>";
@@ -1457,8 +1460,9 @@
 			files = (
 				FA2EB20E1510E687000B6687 /* libtinyunwind.h in Headers */,
 				FA2EB2121510EE78000B6687 /* libtinyunwind_internal.h in Headers */,
-				FA2EB22C1511CEA5000B6687 /* libtinyunwind_imagelist.h in Headers */,
+				FA2EB22C1511CEA5000B6687 /* libtinyunwind_asynclist.h in Headers */,
 				FA2EB22E1511D41C000B6687 /* libtinyunwind_image.h in Headers */,
+				FA2EB24715120180000B6687 /* libtinyunwind_dwarf.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2208,7 +2212,7 @@
 				FA2EB2281511C3A8000B6687 /* libtinyunwind_framepointer.c in Sources */,
 				FA2EB22A1511C3C5000B6687 /* libtinyunwind_stackscan.c in Sources */,
 				FA2EB2301511D852000B6687 /* libtinyunwind_image.c in Sources */,
-				FA2EB2321511DEC1000B6687 /* libtinyunwind_imagelist.c in Sources */,
+				FA2EB2321511DEC1000B6687 /* libtinyunwind_asynclist.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

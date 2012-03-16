@@ -27,51 +27,50 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#import "libtinyunwind_imagelist.h"
+#import "libtinyunwind_asynclist.h"
 #import <stdlib.h>
 
 /**
- * Initialize a new binary image list and issue a memory barrier
+ * Initialize a new async list and issue a memory barrier
  *
  * @param list The list structure to be initialized.
  *
  * @warning This method is not async safe.
  */
-void tinyunw_image_list_init (tinyunw_image_list_t *list) {
+void tinyunw_async_list_init (tinyunw_async_list_t *list) {
     memset(list, 0, sizeof(*list));
     list->write_lock = OS_SPINLOCK_INIT;
 }
 
 /**
- * Free any binary image list resources.
+ * Free any binary async list resources.
  *
  * @warning This method is not async safe.
  */
-void tinyunw_image_list_free (tinyunw_image_list_t *list) {
-    tinyunw_image_entry_t *next = list->head;
+void tinyunw_async_list_free (tinyunw_async_list_t *list) {
+    tinyunw_async_list_entry_t *next = list->head;
     while (next != NULL) {
         /* Save the current pointer and fetch the next pointer. */
-        tinyunw_image_entry_t *cur = next;
+        tinyunw_async_list_entry_t *cur = next;
         next = cur->next;
         free(cur);
     }
 }
 
 /**
- * Append a new binary image record to @a list.
+ * Append a new data entry to @a list.
  *
- * @param list The list to which the image record should be appended.
- * @param header The image's header address.
- * @param name The image's name.
+ * @param list The list to which the async record should be appended.
+ * @param data The data pointer. This pointer is not owned by the list.
  *
  * @warning This method is not async safe.
  */
-void tinyunw_image_list_append (tinyunw_image_list_t *list, tinyunw_image_t *image) {
+void tinyunw_async_list_append (tinyunw_async_list_t *list, void *data) {
     /* Initialize the new entry. */
-    tinyunw_image_entry_t *new = calloc(1, sizeof(tinyunw_image_entry_t));
-    new->image = *image;
+    tinyunw_async_list_entry_t *new = calloc(1, sizeof(tinyunw_async_list_entry_t));
+    new->data = data;
     
-    /* Update the image record and issue a memory barrier to ensure a consistent view. */
+    /* Update the entry and issue a memory barrier to ensure a consistent view. */
     OSMemoryBarrier();
     
     /* Lock the list from other writers. */
@@ -104,19 +103,19 @@ void tinyunw_image_list_append (tinyunw_image_list_t *list, tinyunw_image_t *ima
 }
 
 /**
- * Remove a binary image record from @a list.
+ * Remove a data entry from @a list.
  *
- * @param header The header address of the record to be removed. The first record matching this address will be removed.
+ * @param data The data pointer to search for and remove.
  *
  * @warning This method is not async safe.
  */
-void tinyunw_image_list_remove (tinyunw_image_list_t *list, uintptr_t header) {
+void tinyunw_async_list_remove (tinyunw_async_list_t *list, void *data) {
     /* Lock the list from other writers. */
     OSSpinLockLock(&list->write_lock); {
         /* Find the record. */
-        tinyunw_image_entry_t *item = list->head;
+        tinyunw_async_list_entry_t *item = list->head;
         while (item != NULL) {
-            if (item->image.header == header)
+            if (item->data == data)
                 break;
 
             item = item->next;
@@ -168,7 +167,7 @@ void tinyunw_image_list_remove (tinyunw_image_list_t *list, uintptr_t header) {
  * @param list The list to be be retained or released for reading.
  * @param enable If true, the list will be retained. If false, released.
  */
-void tinyunw_image_list_setreading (tinyunw_image_list_t *list, bool enable) {
+void tinyunw_async_list_setreading (tinyunw_async_list_t *list, bool enable) {
     if (enable) {
         /* Increment and issue a barrier. Once issued, no items will be deallocated while a reference is held. */
         OSAtomicIncrement32Barrier(&list->refcount);
@@ -179,12 +178,12 @@ void tinyunw_image_list_setreading (tinyunw_image_list_t *list, bool enable) {
 }
 
 /**
- * Return the next image record. This method is async-safe. If no additional images are available, will return NULL;
+ * Return the next entry. This method is async-safe. If no additional entries are available, will return NULL;
  *
  * @param list The list to be iterated.
- * @param current The current image record, or NULL to start iteration.
+ * @param current The current entry, or NULL to start iteration.
  */
-tinyunw_image_entry_t *tinyunw_image_list_next (tinyunw_image_list_t *list, tinyunw_image_entry_t *current) {
+tinyunw_async_list_entry_t *tinyunw_async_list_next (tinyunw_async_list_t *list, tinyunw_async_list_entry_t *current) {
     if (current != NULL)
         return current->next;
 

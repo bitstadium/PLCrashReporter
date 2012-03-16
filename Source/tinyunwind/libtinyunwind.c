@@ -34,7 +34,7 @@
 
 bool					tinyunw_tracking_images = false;
 bool					tinyunw_dyld_callbacks_installed = false;
-tinyunw_image_list_t	tinyunw_loaded_images_list;
+tinyunw_async_list_t	tinyunw_loaded_images_list;
 
 int					tinyunw_read_unsafe_memory(const void *pointer, void *destination, size_t len)
 {
@@ -59,19 +59,20 @@ tinyunw_image_t     *tinyunw_get_image_containing_address(uintptr_t address)
     if (!tinyunw_dyld_callbacks_installed)
         return NULL;
     
-    tinyunw_image_entry_t *entry = NULL;
+    tinyunw_async_list_entry_t *entry = NULL;
     
     /* Loop over all loaded images, checking whether the address is within its
        VM range. Facilities for checking whether the address falls within a
        valid symbol are unsafe at async-signal time. */
-    tinyunw_image_list_setreading(&tinyunw_loaded_images_list, true);
-    while ((entry = tinyunw_image_list_next(&tinyunw_loaded_images_list, entry)) != NULL) {
-        if (address >= entry->image.textSection.base && address <= entry->image.textSection.end) {
-            tinyunw_image_list_setreading(&tinyunw_loaded_images_list, false);
-            return &entry->image;
+    tinyunw_async_list_setreading(&tinyunw_loaded_images_list, true);
+    while ((entry = tinyunw_async_list_next(&tinyunw_loaded_images_list, entry)) != NULL) {
+        tinyunw_image_t *image = (tinyunw_image_t *)entry->data;
+        if (address >= image->textSection.base && address <= image->textSection.end) {
+            tinyunw_async_list_setreading(&tinyunw_loaded_images_list, false);
+            return image;
         }
     }
-    tinyunw_image_list_setreading(&tinyunw_loaded_images_list, false);
+    tinyunw_async_list_setreading(&tinyunw_loaded_images_list, false);
 #endif
     return NULL;
 }
@@ -80,10 +81,10 @@ tinyunw_image_t     *tinyunw_get_image_containing_address(uintptr_t address)
 static void			tinyunw_dyld_add_image(const struct mach_header *header, intptr_t vmaddr_slide)
 {
     if (tinyunw_tracking_images) {
-        tinyunw_image_t image;
+        tinyunw_image_t *image = tinyunw_image_alloc();
         
-        tinyunw_make_image_from_header(&image, (uintptr_t)header, vmaddr_slide);
-        tinyunw_image_list_append(&tinyunw_loaded_images_list, &image);
+        tinyunw_image_parse_from_header(image, (uintptr_t)header, vmaddr_slide);
+        tinyunw_async_list_append(&tinyunw_loaded_images_list, image);
     }
 }
 
@@ -92,7 +93,7 @@ static void			tinyunw_dyld_remove_image(const struct mach_header *header, intptr
     /* Do NOT check here whether tracking is enabled. While failing to notice a
        newly added image is harmless, failing to notice a removed image may
        lead to crashes on attempts to read the image list. */
-    tinyunw_image_list_remove(&tinyunw_loaded_images_list, (uintptr_t)header);
+    tinyunw_async_list_remove_image_by_header(&tinyunw_loaded_images_list, (uintptr_t)header);
 }
 #endif
 
@@ -104,7 +105,7 @@ int					tinyunw_setimagetracking(bool tracking_flag)
         tinyunw_tracking_images = true;
         if (!tinyunw_dyld_callbacks_installed) {
             tinyunw_dyld_callbacks_installed = true;
-            tinyunw_image_list_init(&tinyunw_loaded_images_list);
+            tinyunw_async_list_init(&tinyunw_loaded_images_list);
             _dyld_register_func_for_add_image(tinyunw_dyld_add_image);
             _dyld_register_func_for_remove_image(tinyunw_dyld_remove_image);
         }

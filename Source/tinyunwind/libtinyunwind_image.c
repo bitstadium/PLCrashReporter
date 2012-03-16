@@ -29,6 +29,8 @@
 
 #import "libtinyunwind_image.h"
 #import "libtinyunwind_internal.h"
+#import "libtinyunwind_asynclist.h"
+#import <stdlib.h>
 
 #ifndef SECT_EHFRAME
 # define SECT_EHFRAME "__eh_frame"
@@ -51,7 +53,17 @@ static inline tinyunw_image_piece_t tinyunw_piece_from_section(struct section_64
     return (tinyunw_image_piece_t){ .base = section->addr + vmaddr_slide, .end = section->addr + vmaddr_slide + section->size, .length = section->size };
 }
 
-int			tinyunw_make_image_from_header(tinyunw_image_t *image, uintptr_t header, intptr_t vmaddr_slide)
+tinyunw_image_t *tinyunw_image_alloc(void)
+{
+    return calloc(1, sizeof(tinyunw_image_t));
+}
+
+void tinyunw_image_free(tinyunw_image_t *image)
+{
+    free(image);
+}
+
+int			tinyunw_image_parse_from_header(tinyunw_image_t *image, uintptr_t header, intptr_t vmaddr_slide)
 {
     const struct mach_header_64 *header64 = (const struct mach_header_64 *) header;
     struct load_command *cmd;
@@ -108,5 +120,32 @@ int			tinyunw_make_image_from_header(tinyunw_image_t *image, uintptr_t header, i
         cmd = (struct load_command *) ((uint8_t *) cmd + cmd->cmdsize);
     }
     
+    /* Prefer DWARF .debug_frame over .eh_frame, if available. Ignore errors,
+       since they don't invalidate the image as a whole, just the debug info. */
+    if (image->debugFrameSection.base != 0) {
+        tinyunw_dwarf_parse_frame(image->debugFrameSection.base, image->debugFrameSection.end, false, &image->dwarfInfo);
+    } else if (image->exceptionFrameSection.base != 0) {
+        tinyunw_dwarf_parse_frame(image->exceptionFrameSection.base, image->exceptionFrameSection.end, true, &image->dwarfInfo);
+    } else {
+        memset(&image->dwarfInfo, 0, sizeof(tinyunw_dwarf_fde_list_t));
+    }
+    
     return TINYUNW_ESUCCESS;
+}
+
+void           tinyunw_async_list_remove_image_by_header (tinyunw_async_list_t *list, uintptr_t header)
+{
+    tinyunw_async_list_entry_t *entry = NULL;
+    
+    /* This will result in two linear searches of the async list, but it allows
+       the list to be abstracted away from a single data type while violating
+       module separate slightly by knowing what to do with a removed binary image.
+       It's a fair tradeoff, given that the async list is useful elsewhere. */
+    while ((entry = tinyunw_async_list_next(list, entry)) != NULL) {
+        if (((tinyunw_image_t *)entry->data)->header == header) {
+            tinyunw_async_list_remove(list, entry->data);
+            free(entry->data);
+            return;
+        }
+    }
 }
