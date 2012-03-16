@@ -29,40 +29,6 @@
 
 #import "libtinyunwind_internal.h"
 
-#if __x86_64__
-static bool tinyunw_address_looks_valid (uintptr_t address)
-{
-    /* Optimization: The entire bottom 4GB of address space is known to be
-       invalid on OS X. Immediately return false if the address is in that
-       range. */
-    if ((address & 0xFFFFFFFF00000000) == 0)
-        return false;
-    
-    /* The global image list is invalid if the dyld callbacks haven't been
-       installed yet (image tracking has never been activated). Without an
-       image list, the only way to guess at an address' validity is whether or
-       not it's within the process' address space, and that's not good enough
-       for checking stack data. */
-    if (!tinyunw_dyld_callbacks_installed)
-        return false;
-    
-    tinyunw_image_entry_t *entry = NULL;
-    
-    /* Loop over all loaded images, checking whether the address is within its
-       VM range. Facilities for checking whether the address falls within a
-       valid symbol are unsafe at async-signal time. */
-    tinyunw_image_list_setreading(&tinyunw_loaded_images_list, true);
-    while ((entry = tinyunw_image_list_next(&tinyunw_loaded_images_list, entry)) != NULL) {
-        if (address >= entry->image.textSection.base && address <= entry->image.textSection.end) {
-            tinyunw_image_list_setreading(&tinyunw_loaded_images_list, false);
-            return true;
-        }
-    }
-    tinyunw_image_list_setreading(&tinyunw_loaded_images_list, false);
-    return false;
-}
-#endif
-
 int			tinyunw_try_step_stackscan (tinyunw_real_cursor_t *cursor)
 {
 #if __x86_64__
@@ -80,13 +46,15 @@ int			tinyunw_try_step_stackscan (tinyunw_real_cursor_t *cursor)
         if (tinyunw_read_unsafe_memory((const void *)loc, &data, sizeof(data)) != KERN_SUCCESS) {
             /* ran off the end of the stack; treat it as no more frames */
             return TINYUNW_ENOFRAME;
-        } else if (tinyunw_address_looks_valid(data)) {
-            /* This is a valid address in some loaded address space. Cross
-               fingers and hope, because that's all the checks we can do at
-               async signal time. Record the address, advance the saved stack
-               pointer, and return success. */
+        } else if (tinyunw_get_image_containing_address(data)) {
+            /* This is a valid address in some loaded address space, we don't
+               care which from here. Cross fingers and hope, because that's all
+               the checks we can do at async signal time. Record the address,
+               advance the saved stack pointer, update rbp with our best guess
+               to give future frame pointer checks a chance, and return success. */
             cursor->last_stack_pointer = loc + sizeof(tinyunw_word_t);
             cursor->current_context.__rip = data;
+            tinyunw_read_unsafe_memory((const void *)(loc - sizeof(tinyunw_word_t)), &cursor->current_context.__rbp, sizeof(tinyunw_word_t));
             return TINYUNW_ESUCCESS;
         }
     }

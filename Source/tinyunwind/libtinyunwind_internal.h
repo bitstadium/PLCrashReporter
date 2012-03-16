@@ -75,3 +75,4 @@ int tinyunw_try_step_dwarf(tinyunw_real_cursor_t *cursor);
 int tinyunw_try_step_unwind(tinyunw_real_cursor_t *cursor);
 int tinyunw_try_step_fp(tinyunw_real_cursor_t *cursor);
 int tinyunw_try_step_stackscan(tinyunw_real_cursor_t *cursor);
+tinyunw_image_t *tinyunw_get_image_containing_address(uintptr_t address);

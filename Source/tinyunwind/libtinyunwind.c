@@ -43,6 +43,39 @@ int					tinyunw_read_unsafe_memory(const void *pointer, void *destination, size_
     return vm_read_overwrite(mach_task_self(), (vm_address_t)pointer, len, (pointer_t)destination, &read_size);
 }
 
+tinyunw_image_t     *tinyunw_get_image_containing_address(uintptr_t address)
+{
+#if __x86_64__
+    /* Optimization: The entire bottom 4GB of address space is known to be
+       invalid on OS X. Immediately return NULL if the address is in that
+       range. */
+    if ((address & 0xFFFFFFFF00000000) == 0)
+        return NULL;
+    
+    /* The global image list is invalid if the dyld callbacks haven't been
+       installed yet (image tracking has never been activated). Without an
+       image list, there's no way to figure out what image contains the address
+       at async-signal safe time. */
+    if (!tinyunw_dyld_callbacks_installed)
+        return NULL;
+    
+    tinyunw_image_entry_t *entry = NULL;
+    
+    /* Loop over all loaded images, checking whether the address is within its
+       VM range. Facilities for checking whether the address falls within a
+       valid symbol are unsafe at async-signal time. */
+    tinyunw_image_list_setreading(&tinyunw_loaded_images_list, true);
+    while ((entry = tinyunw_image_list_next(&tinyunw_loaded_images_list, entry)) != NULL) {
+        if (address >= entry->image.textSection.base && address <= entry->image.textSection.end) {
+            tinyunw_image_list_setreading(&tinyunw_loaded_images_list, false);
+            return &entry->image;
+        }
+    }
+    tinyunw_image_list_setreading(&tinyunw_loaded_images_list, false);
+#endif
+    return NULL;
+}
+
 #if __x86_64__
 static void			tinyunw_dyld_add_image(const struct mach_header *header, intptr_t vmaddr_slide)
 {
