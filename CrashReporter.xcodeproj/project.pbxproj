@@ -779,7 +779,7 @@
 		FA2EB22D1511D41B000B6687 /* libtinyunwind_image.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = libtinyunwind_image.h; path = tinyunwind/libtinyunwind_image.h; sourceTree = "<group>"; usesTabs = 0; };
 		FA2EB22F1511D852000B6687 /* libtinyunwind_image.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = libtinyunwind_image.c; path = tinyunwind/libtinyunwind_image.c; sourceTree = "<group>"; usesTabs = 0; };
 		FA2EB2311511DEC1000B6687 /* libtinyunwind_asynclist.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = libtinyunwind_asynclist.c; path = tinyunwind/libtinyunwind_asynclist.c; sourceTree = "<group>"; usesTabs = 0; };
-		FA2EB2461512017F000B6687 /* libtinyunwind_dwarf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = libtinyunwind_dwarf.h; path = tinyunwind/libtinyunwind_dwarf.h; sourceTree = "<group>"; };
+		FA2EB2461512017F000B6687 /* libtinyunwind_dwarf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = libtinyunwind_dwarf.h; path = tinyunwind/libtinyunwind_dwarf.h; sourceTree = "<group>"; usesTabs = 0; };
 		FA43C04B15095ED7002483C0 /* PLCrashMachOImage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLCrashMachOImage.h; sourceTree = "<group>"; };
 		FA43C04C15095ED7002483C0 /* PLCrashMachOImage.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = PLCrashMachOImage.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
