@@ -32,6 +32,7 @@
 #import <stdbool.h>
 #import <mach/mach.h>
 #import "libtinyunwind_asynclist.h"
+#import "libtinyunwind_image.h"
 
 /**
   * @defgroup tinyunwind_dwarf DWARF parsing routines for libtinyunwind.
@@ -111,7 +112,7 @@ struct tinyunw_dwarf_fde_t {
     size_t length;
     
     /** The CIE associated with this FDE. */
-    tinyunw_dwarf_cie_t *cie;
+    tinyunw_dwarf_cie_t cie;
     
     /** The absolute IP of the first instruction this FDE refers to. */
     uintptr_t initialLocation;
@@ -128,33 +129,6 @@ struct tinyunw_dwarf_fde_t {
     uintptr_t lsdaStart;
 };
 typedef struct tinyunw_dwarf_fde_t tinyunw_dwarf_fde_t;
-
-/**
-  * A list of parsed FDEs, including associated CIE lookup table.
-  */
-struct tinyunw_dwarf_fde_list_t {
-    /** The number of CIEs in thist list. */
-    int ncies;
-    
-    /** The number of allocated spaces for CIEs in this list. Only used during parsing. */
-    int cieCapacity;
-    
-    /** The data storage area for CIEs. */
-    tinyunw_dwarf_cie_t *cies;
-    
-    /** The number of FDEs in this list. */
-    int nfdes;
-    
-    /** The number of allocated spaces for FDEs in this list. Only used during parsing. */
-    int fdeCapacity;
-    
-    /** The data storage area for FDEs. */
-    tinyunw_dwarf_fde_t *fdes;
-    
-    /** The async-safe FDE list. */
-    tinyunw_async_list_t fdeList;
-};
-typedef struct tinyunw_dwarf_fde_list_t tinyunw_dwarf_fde_list_t;
 
 /**
   * The number of saved registers in DWARF for x86_64.
@@ -181,7 +155,6 @@ enum {
 struct tinyunw_dwarf_cfa_state_t {
     /** The saved registers. */
     struct tinyunw_dwarf_saved_register_t {
-
         /** The location from which the register value is obtained. */
         int saveLocation;
         
@@ -189,10 +162,14 @@ struct tinyunw_dwarf_cfa_state_t {
         tinyunw_word_t value;
     } savedRegisters[TINYUNW_SAVED_REGISTER_COUNT];
     
-    /** The CFA register. */
+    /** The CFA register. One of cfaRegister or cfaExpression must always be
+        zero. */
     tinyunw_word_t cfaRegister;
     int64_t cfaOffset;
     uintptr_t cfaExpression;
+    
+    /** The CIE this state was applied to. */
+    tinyunw_dwarf_cie_t *cie;
 };
 typedef struct tinyunw_dwarf_cfa_state_t tinyunw_dwarf_cfa_state_t;
 
@@ -201,35 +178,10 @@ typedef struct tinyunw_dwarf_cfa_state_t tinyunw_dwarf_cfa_state_t;
 
 /**
   * @internal
-  * Parse a debug info frame (either .debug_frame or .eh_frame) into an FDE list.
-  * The returned FDE list contains malloc()d memory, but can be accessed safely
-  * at async signal time.
+  * Search a binary image (either .debug_frame or .eh_frame), searching for
+  * a CEI/FDE pair associated with a given IP.
   */
-int tinyunw_dwarf_parse_frame(uintptr_t loc, uintptr_t maxLoc, bool isEHFrame, tinyunw_dwarf_fde_list_t *list);
-
-
-/** FDE list management routines. */
-
-/**
-  * @internal
-  * Free the memory used by the FDE list. Does not free the list pointer itself!
-  */
-void tinyunw_dwarf_fde_list_free(tinyunw_dwarf_fde_list_t *list);
-int tinyunw_dwarf_fde_list_add_cie(tinyunw_dwarf_fde_list_t *list, tinyunw_dwarf_cie_t *cie);
-/**
-  * @internal
-  * FDEs are added to the list sorted by initialLocation. This can be an expensive
-  * operation if entries need to be shuffled around.
-  */
-int tinyunw_dwarf_fde_list_add_fde(tinyunw_dwarf_fde_list_t *list, tinyunw_dwarf_fde_t *fde);
-/**
-  * @internal
-  * Does a linear search of the ordered FDE list for the first entry containing
-  * the given address. This routine is async-signal safe. Because it must iterate
-  * an async-signal safe list, it can not do a more efficient search.
-  */
-tinyunw_dwarf_fde_t *tinyunw_dwarf_fde_list_search(tinyunw_dwarf_fde_list_t *list, uintptr_t ip);
-
+int tinyunw_dwarf_search_image(tinyunw_image_t *image, uintptr_t ip, tinyunw_dwarf_fde_t *result);
 
 /** CFA program routines. */
 
@@ -241,3 +193,4 @@ int tinyunw_dwarf_run_cfa_for_fde(tinyunw_dwarf_fde_t *fde, uintptr_t ip, tinyun
   */
 int tinyunw_dwarf_run_cfa_program(tinyunw_dwarf_cie_t *cie, uintptr_t instrStart, uintptr_t instrEnd, uintptr_t ipLimit,
                                   tinyunw_dwarf_cfa_state_t *stack, int maxstack, int *nstack);
+int tinyunw_dwarf_apply_state(tinyunw_dwarf_cfa_state_t *state, tinyunw_context_t *context);

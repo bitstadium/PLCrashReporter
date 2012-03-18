@@ -28,43 +28,82 @@
  */
 
 #import "libtinyunwind_internal.h"
+#import "libtinyunwind_dwarf.h"
+#import "libtinyunwind_image.h"
 #import <stdlib.h>
 #import <fcntl.h>
 #import <stdio.h>
 #import <sys/param.h>
 
-#define TINYUNW_DEBUG(msg, args...) {\
-    char output[256];\
-    snprintf(output, sizeof(output), "[tinyunwind] " msg "\n", ## args); \
-    write(STDERR_FILENO, output, strlen(output));\
-}
-
 int			tinyunw_try_step_dwarf(tinyunw_real_cursor_t *cursor)
 {
 #if __x86_64__
+    if (cursor->current_context.__rip == 0) {
+        //TINYUNW_DEBUG("RIP is null, definitely no frame.");
+        return TINYUNW_ENOFRAME;
+    }
+    
     tinyunw_image_t *image = tinyunw_get_image_containing_address(cursor->current_context.__rip);
     
     /* Check whether the image that contains the current instruction has any
-       debug info we can read. If not, give up immediately. */
-    if (!image->dwarfInfo.nfdes)
-        return TINYUNW_ENOFRAME;
-    
-    tinyunw_dwarf_fde_t *fde = tinyunw_dwarf_fde_list_search(&image->dwarfInfo, cursor->current_context.__rip);
-    
-    if (fde) {
-        /* Try using it here! */
-        tinyunw_dwarf_cfa_state_t state;
-        
-        tinyunw_dwarf_run_cfa_for_fde(fde, cursor->current_context.__rip, &state);
-        TINYUNW_DEBUG("Generated state:");
-        TINYUNW_DEBUG("\tCFA register: %llu + 0x%llx exp 0x%ld", state.cfaRegister, state.cfaOffset, state.cfaExpression);
-        for (int i = 0; i < TINYUNW_SAVED_REGISTER_COUNT; ++i) {
-            TINYUNW_DEBUG("\tRegister %d: 0x%llx @ %d", i, state.savedRegisters[i].value, state.savedRegisters[i].saveLocation);
-        }
+       debug info we can read. If not, give up immediately and signal the upstream
+       routines to keep trying. */
+    if (!image->debugFrameSection.base && !image->exceptionFrameSection.base) {
+        //TINYUNW_DEBUG("No DWARF in image %s for RIP 0x%llx", image->name, cursor->current_context.__rip);
+        return TINYUNW_ENOINFO;
     }
-#endif    
-    return TINYUNW_ENOFRAME;
+    
+    tinyunw_dwarf_fde_t fde;
+    int result = 0;
+    
+    if ((result = tinyunw_dwarf_search_image(image, cursor->current_context.__rip, &fde)) != TINYUNW_ESUCCESS) {
+        /* No FDE means there's DWARF info for the image, but not this particular
+           function. Signal upstream routines to keep trying. */
+        //TINYUNW_DEBUG("No FDE in %s for the function at RIP 0x%llx", image->name, cursor->current_context.__rip);
+        return result;
+    }
+    
+    //TINYUNW_DEBUG("Found FDE for RIP 0x%llx", cursor->current_context.__rip);
+    //TINYUNW_DEBUG("FDE is in image %s", image->name);
+    //TINYUNW_DEBUG("FDE is for range 0x%lx - 0x%lx", fde.initialLocation, fde.finalLocation);
+    //TINYUNW_DEBUG("FDE starts at 0x%lx", fde.fdeLocation - image->exceptionFrameSection.base);
+
+    tinyunw_dwarf_cfa_state_t state;
+        
+    if ((result = tinyunw_dwarf_run_cfa_for_fde(&fde, cursor->current_context.__rip, &state)) != TINYUNW_ESUCCESS)
+        return result;
+    if ((result = tinyunw_dwarf_apply_state(&state, &cursor->current_context)) != TINYUNW_ESUCCESS)
+        return result;
+
+    /* Update the cursor's stack pointer so future stack scans are hopefully
+       a little more accurate. */
+    cursor->last_stack_pointer = cursor->current_context.__rsp;
+
+    /*
+    TINYUNW_DEBUG("Found a frame in %s, range 0x%lx - 0x%lx", image->name, fde.initialLocation, fde.finalLocation);
+    TINYUNW_DEBUG("Generated state:");
+    TINYUNW_DEBUG("\tCFA register: %llu + 0x%llx exp 0x%ld", state.cfaRegister, state.cfaOffset, state.cfaExpression);
+    for (int i = 0; i < TINYUNW_SAVED_REGISTER_COUNT; ++i) {
+        TINYUNW_DEBUG("\tRegister %d: 0x%llx @ %d", i, state.savedRegisters[i].value, state.savedRegisters[i].saveLocation);
+    }
+    TINYUNW_DEBUG("Applied register state:");
+    TINYUNW_DEBUG("\tRAX: 0x%016llx RBX: 0x%016llx RCX: 0x%016llx RDX: 0x%016llx",
+        cursor->current_context.__rax, cursor->current_context.__rbx, cursor->current_context.__rcx, cursor->current_context.__rdx);
+    TINYUNW_DEBUG("\tRSI: 0x%016llx RDI: 0x%016llx RSP: 0x%016llx RBP: 0x%016llx",
+        cursor->current_context.__rsi, cursor->current_context.__rdi, cursor->current_context.__rsp, cursor->current_context.__rbp);
+    TINYUNW_DEBUG("\tR8:  0x%016llx R9:  0x%016llx R10: 0x%016llx R11: 0x%016llx",
+        cursor->current_context.__r8, cursor->current_context.__r9, cursor->current_context.__r10, cursor->current_context.__r12);
+    TINYUNW_DEBUG("\tR12: 0x%016llx R13: 0x%016llx R14: 0x%016llx R15: 0x%016llx",
+        cursor->current_context.__r12, cursor->current_context.__r13, cursor->current_context.__r14, cursor->current_context.__r15);
+    TINYUNW_DEBUG("\tRIP: 0x%016llx", cursor->current_context.__rip);
+    */
+    
+    return TINYUNW_ESUCCESS;
+#endif
+    return TINYUNW_ENOINFO;
 }
+
+#if __x86_64__
 
 enum {
     DW_EH_PE_indirect = 0x80, /* flag to indirect through the read value */
@@ -135,6 +174,7 @@ enum
 #define tinyunw_dwarf_read_leb128(l, ml, s) (s ? tinyunw_dwarf_read_sleb128(l, ml) : tinyunw_dwarf_read_uleb128(l, ml))
 #define tinyunw_dwarf_read_pointer(l, ml) (sizeof(uintptr_t) == sizeof(uint64_t) ? tinyunw_dwarf_read_u64(l, ml) : tinyunw_dwarf_read_u32(l, ml))
 #define tinyunw_dwarf_read_encoded_pointer(l, ml, e) ({ uintptr_t v = 0; if (_tinyunw_dwarf_read_encoded_pointer((l), (ml), (e), &v)) { return TINYUNW_EUNSPEC; } v; })
+#define tinyunw_dwarf_fetch_word(l) ({ tinyunw_word_t w = 0; uintptr_t a = (l); w = tinyunw_dwarf_read_pointer(&a, a + sizeof(tinyunw_word_t)); w; })
 
 static inline int _tinyunw_dwarf_read_uleb128(uintptr_t *loc, uintptr_t maxLoc, uint64_t *value) {
     int bits = 0;
@@ -325,22 +365,15 @@ int tinyunw_dwarf_parse_cie(uintptr_t *loc, uintptr_t maxLoc, bool isEHFrame, ti
     return TINYUNW_ESUCCESS;
 }
 
-static tinyunw_dwarf_cie_t *tinyunw_dwarf_cie_at_location(tinyunw_dwarf_fde_list_t *list, uintptr_t location) {
-    for (int i = 0; i < list->ncies; ++i) {
-        if (list->cies[i].cieLocation == location)
-            return &list->cies[i];
-    }
-    return NULL;
-}
 /**
   * @internal
   * Parse an FDE. It's already known to be an FDE, so don't recheck.
   */
-int tinyunw_dwarf_parse_fde(uintptr_t *loc, uintptr_t baseLoc, uintptr_t maxLoc, bool isEHFrame, tinyunw_dwarf_fde_t *fde, tinyunw_dwarf_fde_list_t *list)
+int tinyunw_dwarf_parse_fde(uintptr_t *loc, uintptr_t baseLoc, uintptr_t maxLoc, bool isEHFrame, tinyunw_dwarf_fde_t *fde)
 {
     memset(fde, 0, sizeof(tinyunw_dwarf_fde_t));
     fde->fdeLocation = *loc;
-    
+
     uint32_t entryLength32 = tinyunw_dwarf_read_u32(loc, maxLoc);
     int64_t cieOffset = 0;
     uint64_t cieLocation = 0;
@@ -371,137 +404,95 @@ int tinyunw_dwarf_parse_fde(uintptr_t *loc, uintptr_t baseLoc, uintptr_t maxLoc,
         cieLocation = baseLoc + cieOffset;
     }
     
-    if ((fde->cie = tinyunw_dwarf_cie_at_location(list, cieLocation)) == NULL) {
-        return TINYUNW_EUNSPEC;
-    }
+    int result = 0;
     
+    if ((result = tinyunw_dwarf_parse_cie((uintptr_t *)&cieLocation, maxLoc, isEHFrame, &fde->cie)) != TINYUNW_ESUCCESS)
+        return result;
     /* IP range is always an absolute value, but initial location is standard. */
-    fde->initialLocation = tinyunw_dwarf_read_encoded_pointer(loc, maxLoc, fde->cie->pointerEncoding);
-    fde->finalLocation = tinyunw_dwarf_read_encoded_pointer(loc, maxLoc, fde->cie->pointerEncoding & 0x0F) + fde->initialLocation;
-    if (fde->cie->hasAugmentationData) {
+    fde->initialLocation = tinyunw_dwarf_read_encoded_pointer(loc, maxLoc, fde->cie.pointerEncoding);
+    fde->finalLocation = tinyunw_dwarf_read_encoded_pointer(loc, maxLoc, fde->cie.pointerEncoding & 0x0F) + fde->initialLocation;
+    if (fde->cie.hasAugmentationData) {
         uint64_t augmentationLen = tinyunw_dwarf_read_uleb128(loc, maxLoc);
         uintptr_t augmentationEnd = *loc + augmentationLen, p = 0, saveLoc = *loc;
         
-        if (fde->cie->lsdaEncoding != 0) {
-            if ((p = tinyunw_dwarf_read_encoded_pointer(loc, maxLoc, fde->cie->lsdaEncoding & 0x0F)) != 0) {
+        if (fde->cie.lsdaEncoding != 0) {
+            if ((p = tinyunw_dwarf_read_encoded_pointer(loc, maxLoc, fde->cie.lsdaEncoding & 0x0F)) != 0) {
                 *loc = saveLoc;
-                fde->lsdaStart = tinyunw_dwarf_read_encoded_pointer(loc, maxLoc, fde->cie->lsdaEncoding);
+                fde->lsdaStart = tinyunw_dwarf_read_encoded_pointer(loc, maxLoc, fde->cie.lsdaEncoding);
             }
         }
         *loc = augmentationEnd;
     }
+
     fde->instructionsStart = *loc;
     fde->fdeEnd = fde->fdeStart + fde->length;
+    
     return TINYUNW_ESUCCESS;
 }
 
 /**
   * @internal
-  * Parse a debug info frame (either .debug_frame or .eh_frame) into an FDE list.
-  * The returned FDE list contains malloc()d memory, but can be accessed safely
-  * at async signal time.
+  * Search a binary image (either .debug_frame or .eh_frame), searching for
+  * a CEI/FDE pair associated with a given IP. It is assumed that a given image
+  * has already been checked for the existence of at least some debug info.
   */
-int tinyunw_dwarf_parse_frame(uintptr_t loc, uintptr_t maxLoc, bool isEHFrame, tinyunw_dwarf_fde_list_t *list)
+int tinyunw_dwarf_search_image(tinyunw_image_t *image, uintptr_t ip, tinyunw_dwarf_fde_t *result)
 {
-    uintptr_t p = loc;
+    /* Prefer DWARF .debug_frame over GCC .eh_frame where possible, which is all
+       but never. It is assumed that */
+    bool isEHFrame = (image->debugFrameSection.base == 0);
+    uintptr_t loc = (isEHFrame ? image->exceptionFrameSection.base : image->debugFrameSection.base),
+              p = loc,
+              maxLoc = (isEHFrame ? image->exceptionFrameSection.end : image->debugFrameSection.end);
+    int err = 0;
     
     while (p < maxLoc) {
         bool isCIE;
         
-        if (tinyunw_dwarf_get_entry_kind(p, maxLoc, isEHFrame, &isCIE)) {
-            return TINYUNW_EUNSPEC;
-        }
+        if ((err = tinyunw_dwarf_get_entry_kind(p, maxLoc, isEHFrame, &isCIE)) != TINYUNW_ESUCCESS)
+            return err;
         
+        /* The relevant CIE will be parsed as part of a relevant FDE, but we parse
+           to get the length for skipping. */
         if (isCIE) {
             tinyunw_dwarf_cie_t cie;
             
-            if (tinyunw_dwarf_parse_cie(&p, maxLoc, isEHFrame, &cie)) {
-                return TINYUNW_EUNSPEC;
-            }
-            tinyunw_dwarf_fde_list_add_cie(list, &cie);
+            err = tinyunw_dwarf_parse_cie(&p, maxLoc, isEHFrame, &cie);
+            if (err != TINYUNW_ESUCCESS)
+                return err;
             p = cie.cieEnd;
         } else {
             tinyunw_dwarf_fde_t fde;
-            int result = tinyunw_dwarf_parse_fde(&p, loc, maxLoc, isEHFrame, &fde, list);
             
-            if (result == TINYUNW_ENOFRAME) {
+            err = tinyunw_dwarf_parse_fde(&p, loc, maxLoc, isEHFrame, &fde);
+            if (err == TINYUNW_ESUCCESS) {
+                //TINYUNW_DEBUG("FDE initial location is 0x%lx", fde.initialLocation);
+                if (fde.initialLocation <= ip && fde.finalLocation >= ip) {
+                    *result = fde;
+                    return TINYUNW_ESUCCESS;
+                }
+            } else if (err == TINYUNW_ENOFRAME) {
                 break;
-            } else if (result != TINYUNW_ESUCCESS) {
-                return TINYUNW_EUNSPEC;
+            } else {
+                return err;
             }
-            tinyunw_dwarf_fde_list_add_fde(list, &fde);
             p = fde.fdeEnd;
         }
     }
-    return 0;
-}
-
-void tinyunw_dwarf_fde_list_free(tinyunw_dwarf_fde_list_t *list)
-{
-    if (list->ncies) {
-        free(list->cies);
-    }
-    if (list->nfdes) {
-        tinyunw_async_list_free(&list->fdeList);
-        free(list->fdes);
-    }
-}
-
-int tinyunw_dwarf_fde_list_add_cie(tinyunw_dwarf_fde_list_t *list, tinyunw_dwarf_cie_t *cie)
-{
-    if (list->ncies == list->cieCapacity) {
-        list->cieCapacity = MAX(1, list->cieCapacity) * 2;
-        list->cies = realloc(list->cies, list->cieCapacity * sizeof(tinyunw_dwarf_cie_t));
-    }
-    list->cies[list->ncies++] = *cie;
-    return TINYUNW_ESUCCESS;
-}
-
-int tinyunw_dwarf_fde_list_add_fde(tinyunw_dwarf_fde_list_t *list, tinyunw_dwarf_fde_t *fde)
-{
-    if (list->nfdes == 0) {
-        tinyunw_async_list_init(&list->fdeList);
-    }
-    if (list->nfdes == list->fdeCapacity) {
-        list->fdeCapacity = MAX(1, list->fdeCapacity) * 2;
-        list->fdes = realloc(list->fdes, list->fdeCapacity * sizeof(tinyunw_dwarf_fde_t));
-    }
-    
-    int i = 0;
-    
-    /* Search the list for the nearest initialLocation. Optimize: Search backwards,
-       as FDEs will most often be ordered within a DWARF frame. The insertion
-       index is i + 1. */
-    for (i = list->nfdes - 1; i >= 0; --i) {
-        if (list->fdes[i].initialLocation < fde->initialLocation)
-            break;
-    }
-    
-    memmove(list->fdes + i + 2, list->fdes + i + 1, (list->nfdes - (i + 1)) * sizeof(tinyunw_dwarf_fde_t));
-    list->fdes[i + 1] = *fde;
-    list->nfdes++;
-    tinyunw_async_list_append(&list->fdeList, &(list->fdes[i + 1]));
-    return TINYUNW_ESUCCESS;
-}
-
-tinyunw_dwarf_fde_t *tinyunw_dwarf_fde_list_search(tinyunw_dwarf_fde_list_t *list, uintptr_t ip)
-{
-    for (int i = 0; i < list->nfdes; ++i) {
-        if (ip >= list->fdes[i].initialLocation && ip <= list->fdes[i].finalLocation)
-            return &list->fdes[i];
-    }
-    return NULL;
+    return TINYUNW_ENOINFO;
 }
 
 int tinyunw_dwarf_run_cfa_for_fde(tinyunw_dwarf_fde_t *fde, uintptr_t ip, tinyunw_dwarf_cfa_state_t *results)
 {
-    tinyunw_dwarf_cfa_state_t stateStack[16];
+    tinyunw_dwarf_cfa_state_t stateStack[2];
     int nstack = 0, result = 0;
     
+    //TINYUNW_DEBUG("Run CFA program at IP 0x%lx", ip);
     memset(stateStack, 0, sizeof(stateStack));
-    result = tinyunw_dwarf_run_cfa_program(fde->cie, fde->cie->initialInstructionsStart, fde->cie->cieEnd, (uintptr_t)-1, stateStack, 16, &nstack);
+    stateStack[0].cie = &fde->cie;
+    result = tinyunw_dwarf_run_cfa_program(&fde->cie, fde->cie.initialInstructionsStart, fde->cie.cieEnd, (uintptr_t)-1, stateStack, 2, &nstack);
     if (result == TINYUNW_ESUCCESS)
-        result = tinyunw_dwarf_run_cfa_program(fde->cie, fde->instructionsStart, fde->fdeEnd, fde->initialLocation - ip, stateStack, 16, &nstack);
+        result = tinyunw_dwarf_run_cfa_program(&fde->cie, fde->instructionsStart, fde->fdeEnd, fde->initialLocation - ip, stateStack, 2, &nstack);
     if (result == TINYUNW_ESUCCESS)
         *results = stateStack[nstack];
     return result;
@@ -527,7 +518,7 @@ const char *tinyunw_dwarf_opname(tinyunw_word_t opcode) {
   * @internal
   * The results are placed on the top of the stack (stack[nstack]).
   */
-#define TINYUNW_OP_DEBUG(msg, args...) TINYUNW_DEBUG("%s " msg, tinyunw_dwarf_opname(opcode), ## args)
+#define TINYUNW_OP_DEBUG(msg, args...) //TINYUNW_DEBUG("%s " msg, tinyunw_dwarf_opname(opcode), ## args)
 
 int tinyunw_dwarf_run_cfa_program(tinyunw_dwarf_cie_t *cie, uintptr_t instrStart, uintptr_t instrEnd, uintptr_t ipLimit,
                                   tinyunw_dwarf_cfa_state_t *stack, int maxstack, int *nstack)
@@ -535,7 +526,7 @@ int tinyunw_dwarf_run_cfa_program(tinyunw_dwarf_cie_t *cie, uintptr_t instrStart
     uintptr_t ipCurrent = 0;
     tinyunw_dwarf_cfa_state_t initialState = stack[*nstack];
 
-    TINYUNW_DEBUG("Starting CFA program at 0x%lx IP 0x%lx", instrStart, ipCurrent);
+    //TINYUNW_DEBUG("Starting CFA program stored at 0x%lx - 0x%lx, pc range 0x0 - 0x%lx", instrStart, instrEnd, ipLimit);
     
     while (instrStart < instrEnd && ipCurrent < ipLimit) {
         uint8_t opcode = tinyunw_dwarf_read_u8(&instrStart, instrEnd);
@@ -646,8 +637,6 @@ int tinyunw_dwarf_run_cfa_program(tinyunw_dwarf_cie_t *cie, uintptr_t instrStart
                 operand1 = tinyunw_dwarf_read_uleb128(&instrStart, instrEnd);
                 TINYUNW_OP_DEBUG("%llu", operand1);
                 break;
-                TINYUNW_OP_DEBUG("");
-                return TINYUNW_EINVAL;
             case DW_CFA_GNU_negative_offset_extended: /* Per comments in GCC, this opcode is only used by old PPC code. */
             case DW_CFA_GNU_window_save: /* This is a SPARC-specific opcode. */
             case DW_CFA_lo_user: /* Unused. */
@@ -659,3 +648,106 @@ int tinyunw_dwarf_run_cfa_program(tinyunw_dwarf_cie_t *cie, uintptr_t instrStart
     }
     return TINYUNW_ESUCCESS;
 }
+
+static tinyunw_word_t tinyunw_dwarf_getreg(tinyunw_context_t *context, tinyunw_word_t reg) {
+    #define GETREG(Ur, r) case TINYUNW_X86_64_ ## Ur: return context->__ ## r
+    switch (reg) {
+        GETREG(RAX, rax); GETREG(RBX, rbx); GETREG(RCX, rcx); GETREG(RDX, rdx);
+        GETREG(RSI, rsi); GETREG(RDI, rdi); GETREG(RSP, rsp); GETREG(RBP, rbp);
+        GETREG(R8,   r8); GETREG(R9,   r9); GETREG(R10, r10); GETREG(R11, r11);
+        GETREG(R12, r12); GETREG(R13, r13); GETREG(R14, r14); GETREG(R15, r15);
+        GETREG(RIP, rip);
+    }
+    #undef GETREG
+    return 0;
+}
+
+static void tinyunw_dwarf_setreg(tinyunw_context_t *context, tinyunw_word_t reg, tinyunw_word_t value) {
+    #define SETREG(Ur, r) case TINYUNW_X86_64_ ## Ur: context->__ ## r = value; break
+    switch (reg) {
+        SETREG(RAX, rax); SETREG(RBX, rbx); SETREG(RCX, rcx); SETREG(RDX, rdx);
+        SETREG(RSI, rsi); SETREG(RDI, rdi); SETREG(RSP, rsp); SETREG(RBP, rbp);
+        SETREG(R8,   r8); SETREG(R9,   r9); SETREG(R10, r10); SETREG(R11, r11);
+        SETREG(R12, r12); SETREG(R13, r13); SETREG(R14, r14); SETREG(R15, r15);
+        SETREG(RIP, rip);
+        default: /* ignore */
+            break;
+    }
+    #undef SETREG
+}
+
+int tinyunw_dwarf_eval_cfa_expression(uintptr_t exprStart, struct tinyunw_dwarf_saved_register_t *registers, tinyunw_word_t *result)
+{
+    return TINYUNW_EINVAL;
+}
+
+int tinyunw_dwarf_apply_state(tinyunw_dwarf_cfa_state_t *state, tinyunw_context_t *context)
+{
+    /* Note: The TINYUNW_X86_64_* constants were chosen to correspond with DWARF
+       register columns. */
+    
+    tinyunw_word_t cfaValue = 0;
+    int result = TINYUNW_ESUCCESS;
+    
+    if (state->cfaRegister != 0) {
+        cfaValue = tinyunw_dwarf_getreg(context, state->cfaRegister) + state->cfaOffset;
+    } else if (state->cfaExpression != 0) {
+        result = tinyunw_dwarf_eval_cfa_expression(state->cfaExpression, state->savedRegisters, &cfaValue);
+        if (result != TINYUNW_ESUCCESS)
+            return result;
+    } else {
+        return TINYUNW_EINVAL;
+    }
+    
+    for (tinyunw_word_t i = 0; i < TINYUNW_SAVED_REGISTER_COUNT; ++i) {
+        switch (state->savedRegisters[i].saveLocation) {
+            /* Some implementations clear out the register value here, to distinguish
+               it from the same_value opcode in CFA. It doesn't matter in this
+               implementation, so just ignore unused regs. */
+            case TINYUNW_REG_UNUSED:
+                break;
+            
+            /* Unimplemented in Apple libunwind and nonexistent elsewhere. What
+               is this supposed to be? */
+            case TINYUNW_REG_OFFSET_CFA:
+                return TINYUNW_EBADFRAME;
+            
+            /* Read the value pointed to by the CFA plus an offset. */
+            case TINYUNW_REG_CFA:
+                tinyunw_dwarf_setreg(context, i, tinyunw_dwarf_fetch_word(cfaValue + state->savedRegisters[i].value));
+                break;
+            
+            /* Set the register equal to another register. */
+            case TINYUNW_REG_REG:
+                tinyunw_dwarf_setreg(context, i, state->savedRegisters[state->savedRegisters[i].value].value);
+                break;
+            
+            /* Read the value pointed to by/set equal to an expression. */
+            case TINYUNW_REG_ISEXP:
+            case TINYUNW_REG_ATEXP: {
+                tinyunw_word_t value = 0;
+                
+                if ((result = tinyunw_dwarf_eval_cfa_expression(state->savedRegisters[i].value, state->savedRegisters, &value)) != TINYUNW_ESUCCESS)
+                    return result;
+                tinyunw_dwarf_setreg(context, i, state->savedRegisters[i].saveLocation == TINYUNW_REG_ISEXP ? value : tinyunw_dwarf_fetch_word(value));
+            }
+            
+            default:
+                return TINYUNW_EINVAL;
+        }
+    }
+    
+    /* Update RIP according to the frame. */
+    if (state->savedRegisters[state->cie->returnAddressColumn].saveLocation == TINYUNW_REG_UNUSED) {
+        /* This is an end-of-stack marker in DWARF, set RIP to 0. */
+        tinyunw_dwarf_setreg(context, TINYUNW_X86_64_RIP, 0);
+    } else {
+        context->__rip = tinyunw_dwarf_getreg(context, state->cie->returnAddressColumn);
+    }
+    
+    /* The CFA is, by defintion, the stack pointer. Update RSP accordingly. */
+    tinyunw_dwarf_setreg(context, TINYUNW_X86_64_RSP, cfaValue);
+    return TINYUNW_ESUCCESS;
+}
+
+#endif

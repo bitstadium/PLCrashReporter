@@ -90,6 +90,7 @@ enum {
     TINYUNW_EINVALIDIP          = -6545,        /* invalid IP */
     TINYUNW_EBADFRAME           = -6546,        /* bad frame */
     TINYUNW_EINVAL              = -6547,        /* unsupported operation or bad value */
+    TINYUNW_ENOINFO             = -6549,        /* no unwind info available */
 };
 
 /**

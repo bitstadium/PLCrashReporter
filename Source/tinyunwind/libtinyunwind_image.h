@@ -31,7 +31,7 @@
 #import <libkern/OSAtomic.h>
 #import <stdbool.h>
 #import <mach/mach.h>
-#import "libtinyunwind_dwarf.h"
+#import "libtinyunwind_asynclist.h"
 
 struct tinyunw_image_piece_t {
     /* The first address in the "piece", adjusted for VM address slide. */
@@ -52,6 +52,12 @@ struct tinyunw_image_t {
     /** The binary image's VM address slide. */
     intptr_t vmaddrSlide;
     
+    /** The binary image's path (may be NULL). */
+    char *path;    
+
+    /** The binary image's name (may be NULL). */
+    char *name;
+    
     /** The binary image's __TEXT segment. */
     tinyunw_image_piece_t textSegment;
     
@@ -66,10 +72,6 @@ struct tinyunw_image_t {
     
     /** The binary image's __unwind_info section. */
     tinyunw_image_piece_t unwindInfoSection;
-    
-    /** Parsed DWARF CIE data. If debug info parsing failed, the list is empty. */
-    tinyunw_dwarf_fde_list_t dwarfInfo;
-    
 };
 typedef struct tinyunw_image_t tinyunw_image_t;
 

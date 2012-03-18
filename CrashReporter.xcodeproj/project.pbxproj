@@ -3137,7 +3137,7 @@
 				);
 				PL_BUILD_CONFIG_FLAG = PLCF_DEBUG_BUILD;
 				SDKROOT = macosx;
-				VALID_ARCHS = "i386 ppc armv7 armv6 x86_64";
+				VALID_ARCHS = "x86_64 i386 ppc armv7 armv6";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Werror",
@@ -3162,7 +3162,7 @@
 				);
 				PL_BUILD_CONFIG_FLAG = PLCF_RELEASE_BUILD;
 				SDKROOT = macosx;
-				VALID_ARCHS = "i386 ppc armv7 armv6 x86_64";
+				VALID_ARCHS = "x86_64 i386 ppc armv7 armv6";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Werror",
@@ -3174,7 +3174,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				ARCHS = (
+					i386,
+					x86_64,
+				);
 				COPY_PHASE_STRIP = NO;
 				EFFECTIVE_PLATFORM_NAME = "-MacOSX";
 				EXECUTABLE_PREFIX = lib;
@@ -3191,7 +3194,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				ARCHS = (
+					i386,
+					x86_64,
+				);
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				EFFECTIVE_PLATFORM_NAME = "-MacOSX";

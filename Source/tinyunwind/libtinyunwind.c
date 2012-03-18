@@ -177,11 +177,12 @@ int				tinyunw_step(tinyunw_cursor_t *fake_cursor, tinyunw_flags_t flags)
     
     int result = TINYUNW_ENOFRAME;
     
-    /* Try DWARF stepping first. If it returns any error other than no frames
-       left, return it immediately. */
+    /* Try DWARF stepping first. If it returns any error other than no info
+       avaiable, return it immediately. DWARF can tell the difference between
+       having no info to read and seeing a hard end of the call chain. */
     if (!(flags & TINYUNW_FLAG_NO_DWARF)) {
         result = tinyunw_try_step_dwarf(cursor);
-        if (result == TINYUNW_ESUCCESS || (result != TINYUNW_ESUCCESS && result != TINYUNW_ENOFRAME)) {
+        if (result == TINYUNW_ESUCCESS || (result != TINYUNW_ESUCCESS && result != TINYUNW_ENOINFO)) {
             return result;
         }
     }
@@ -189,7 +190,7 @@ int				tinyunw_step(tinyunw_cursor_t *fake_cursor, tinyunw_flags_t flags)
     /* Next, try compact unwinding info. Same semantics as DWARF. */
     if (!(flags & TINYUNW_FLAG_NO_COMPACT)) {
         result = tinyunw_try_step_unwind(cursor);
-        if (result == TINYUNW_ESUCCESS || (result != TINYUNW_ESUCCESS && result != TINYUNW_ENOFRAME)) {
+        if (result == TINYUNW_ESUCCESS || (result != TINYUNW_ESUCCESS && result != TINYUNW_ENOINFO)) {
             return result;
         }
     }
@@ -197,7 +198,7 @@ int				tinyunw_step(tinyunw_cursor_t *fake_cursor, tinyunw_flags_t flags)
     /* Now try frame pointers. */
     if ((flags & TINYUNW_FLAG_TRY_FRAME_POINTER)) {
         result = tinyunw_try_step_fp(cursor);
-        if (result == TINYUNW_ESUCCESS || (result != TINYUNW_ESUCCESS && result != TINYUNW_ENOFRAME)) {
+        if (result == TINYUNW_ESUCCESS || (result != TINYUNW_ESUCCESS && result != TINYUNW_ENOINFO)) {
             return result;
         }
     }
@@ -205,7 +206,7 @@ int				tinyunw_step(tinyunw_cursor_t *fake_cursor, tinyunw_flags_t flags)
     /* If all else failed, try a stack scan. */
     if (!(flags & TINYUNW_FLAG_NO_STACKSCAN)) {
         result = tinyunw_try_step_stackscan(cursor);
-        if (result == TINYUNW_ESUCCESS || (result != TINYUNW_ESUCCESS && result != TINYUNW_ENOFRAME)) {
+        if (result == TINYUNW_ESUCCESS || (result != TINYUNW_ESUCCESS && result != TINYUNW_ENOINFO)) {
             return result;
         }
     }

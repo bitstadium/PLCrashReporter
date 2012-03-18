@@ -29,7 +29,16 @@
 
 #import "libtinyunwind.h"
 #import "libtinyunwind_image.h"
+#import "libtinyunwind_asynclist.h"
 #import <assert.h>
+#import <stdio.h>
+#import <unistd.h>
+
+#define TINYUNW_DEBUG(msg, args...) {\
+    char output[256];\
+    snprintf(output, sizeof(output), "[tinyunwind] " msg "\n", ## args); \
+    write(STDERR_FILENO, output, strlen(output));\
+}
 
 /**
   * @internal

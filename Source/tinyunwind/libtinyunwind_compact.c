@@ -31,5 +31,5 @@
 
 int			tinyunw_try_step_unwind(tinyunw_real_cursor_t *cursor)
 {
-    return TINYUNW_ENOFRAME;
+    return TINYUNW_ENOINFO;
 }

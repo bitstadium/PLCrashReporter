@@ -31,6 +31,8 @@
 #import "libtinyunwind_internal.h"
 #import "libtinyunwind_asynclist.h"
 #import <stdlib.h>
+#import <dlfcn.h>
+#import <libgen.h>
 
 #ifndef SECT_EHFRAME
 # define SECT_EHFRAME "__eh_frame"
@@ -60,11 +62,22 @@ tinyunw_image_t *tinyunw_image_alloc(void)
 
 void tinyunw_image_free(tinyunw_image_t *image)
 {
+    if (image->path)
+        free(image->path);
+    if (image->name)
+        free(image->name);
     free(image);
 }
 
 int			tinyunw_image_parse_from_header(tinyunw_image_t *image, uintptr_t header, intptr_t vmaddr_slide)
 {
+    Dl_info info;
+    
+    if (dladdr((void *)header, &info) != 0) {
+        image->path = strdup(info.dli_fname);
+        image->name = strdup(basename(image->path));
+    }
+    
     const struct mach_header_64 *header64 = (const struct mach_header_64 *) header;
     struct load_command *cmd;
     
@@ -120,16 +133,6 @@ int			tinyunw_image_parse_from_header(tinyunw_image_t *image, uintptr_t header, 
         cmd = (struct load_command *) ((uint8_t *) cmd + cmd->cmdsize);
     }
     
-    /* Prefer DWARF .debug_frame over .eh_frame, if available. Ignore errors,
-       since they don't invalidate the image as a whole, just the debug info. */
-    if (image->debugFrameSection.base != 0) {
-        tinyunw_dwarf_parse_frame(image->debugFrameSection.base, image->debugFrameSection.end, false, &image->dwarfInfo);
-    } else if (image->exceptionFrameSection.base != 0) {
-        tinyunw_dwarf_parse_frame(image->exceptionFrameSection.base, image->exceptionFrameSection.end, true, &image->dwarfInfo);
-    } else {
-        memset(&image->dwarfInfo, 0, sizeof(tinyunw_dwarf_fde_list_t));
-    }
-    
     return TINYUNW_ESUCCESS;
 }
 
@@ -144,7 +147,7 @@ void           tinyunw_async_list_remove_image_by_header (tinyunw_async_list_t *
     while ((entry = tinyunw_async_list_next(list, entry)) != NULL) {
         if (((tinyunw_image_t *)entry->data)->header == header) {
             tinyunw_async_list_remove(list, entry->data);
-            free(entry->data);
+            tinyunw_image_free(entry->data);
             return;
         }
     }

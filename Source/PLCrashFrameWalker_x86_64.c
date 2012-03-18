@@ -119,11 +119,12 @@ plframe_error_t plframe_cursor_next (plframe_cursor_t *cursor) {
     } else {
         int result;
         
-        result = tinyunw_step(&cursor->unwind_cursor, TINYUNW_FLAG_TRY_FRAME_POINTER);
+        result = tinyunw_step(&cursor->unwind_cursor, 0);
         if (result == TINYUNW_ESUCCESS) {
             ++cursor->nframe;
             return PLFRAME_ESUCCESS;
-        } else if (result == TINYUNW_ENOFRAME) {
+        /* Treat having no unwind info the same as there being no frames left. */
+        } else if (result == TINYUNW_ENOFRAME || result == TINYUNW_ENOINFO) {
             return PLFRAME_ENOFRAME;
         } else {
             return plframe_error_from_tinyunwerror(result);

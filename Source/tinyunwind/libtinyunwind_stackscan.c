@@ -52,6 +52,7 @@ int			tinyunw_try_step_stackscan (tinyunw_real_cursor_t *cursor)
                the checks we can do at async signal time. Record the address,
                advance the saved stack pointer, update rbp with our best guess
                to give future frame pointer checks a chance, and return success. */
+            //TINYUNW_DEBUG("Stack scan found valid-looking address 0x%llx", data);
             cursor->last_stack_pointer = loc + sizeof(tinyunw_word_t);
             cursor->current_context.__rip = data;
             tinyunw_read_unsafe_memory((const void *)(loc - sizeof(tinyunw_word_t)), &cursor->current_context.__rbp, sizeof(tinyunw_word_t));
@@ -59,8 +60,6 @@ int			tinyunw_try_step_stackscan (tinyunw_real_cursor_t *cursor)
         }
     }
     /* Nothing found within search_space words on the stack, give up. */
-    return TINYUNW_ENOFRAME;
-#else
-    return TINYUNW_EUNSPEC;
 #endif
+    return TINYUNW_ENOINFO;
 }
