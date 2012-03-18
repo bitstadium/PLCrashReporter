@@ -48,7 +48,7 @@ int			tinyunw_try_step_dwarf(tinyunw_real_cursor_t *cursor)
     /* Check whether the image that contains the current instruction has any
        debug info we can read. If not, give up immediately and signal the upstream
        routines to keep trying. */
-    if (!image->debugFrameSection.base && !image->exceptionFrameSection.base) {
+    if (!image || (!image->debugFrameSection.base && !image->exceptionFrameSection.base)) {
         //TINYUNW_DEBUG("No DWARF in image %s for RIP 0x%llx", image->name, cursor->current_context.__rip);
         return TINYUNW_ENOINFO;
     }
@@ -484,15 +484,15 @@ int tinyunw_dwarf_search_image(tinyunw_image_t *image, uintptr_t ip, tinyunw_dwa
 
 int tinyunw_dwarf_run_cfa_for_fde(tinyunw_dwarf_fde_t *fde, uintptr_t ip, tinyunw_dwarf_cfa_state_t *results)
 {
-    tinyunw_dwarf_cfa_state_t stateStack[2];
+    tinyunw_dwarf_cfa_state_t stateStack[8];
     int nstack = 0, result = 0;
     
     //TINYUNW_DEBUG("Run CFA program at IP 0x%lx", ip);
     memset(stateStack, 0, sizeof(stateStack));
     stateStack[0].cie = &fde->cie;
-    result = tinyunw_dwarf_run_cfa_program(&fde->cie, fde->cie.initialInstructionsStart, fde->cie.cieEnd, (uintptr_t)-1, stateStack, 2, &nstack);
+    result = tinyunw_dwarf_run_cfa_program(&fde->cie, fde->cie.initialInstructionsStart, fde->cie.cieEnd, (uintptr_t)-1, stateStack, 8, &nstack);
     if (result == TINYUNW_ESUCCESS)
-        result = tinyunw_dwarf_run_cfa_program(&fde->cie, fde->instructionsStart, fde->fdeEnd, fde->initialLocation - ip, stateStack, 2, &nstack);
+        result = tinyunw_dwarf_run_cfa_program(&fde->cie, fde->instructionsStart, fde->fdeEnd, fde->initialLocation - ip, stateStack, 8, &nstack);
     if (result == TINYUNW_ESUCCESS)
         *results = stateStack[nstack];
     return result;
@@ -649,33 +649,6 @@ int tinyunw_dwarf_run_cfa_program(tinyunw_dwarf_cie_t *cie, uintptr_t instrStart
     return TINYUNW_ESUCCESS;
 }
 
-static tinyunw_word_t tinyunw_dwarf_getreg(tinyunw_context_t *context, tinyunw_word_t reg) {
-    #define GETREG(Ur, r) case TINYUNW_X86_64_ ## Ur: return context->__ ## r
-    switch (reg) {
-        GETREG(RAX, rax); GETREG(RBX, rbx); GETREG(RCX, rcx); GETREG(RDX, rdx);
-        GETREG(RSI, rsi); GETREG(RDI, rdi); GETREG(RSP, rsp); GETREG(RBP, rbp);
-        GETREG(R8,   r8); GETREG(R9,   r9); GETREG(R10, r10); GETREG(R11, r11);
-        GETREG(R12, r12); GETREG(R13, r13); GETREG(R14, r14); GETREG(R15, r15);
-        GETREG(RIP, rip);
-    }
-    #undef GETREG
-    return 0;
-}
-
-static void tinyunw_dwarf_setreg(tinyunw_context_t *context, tinyunw_word_t reg, tinyunw_word_t value) {
-    #define SETREG(Ur, r) case TINYUNW_X86_64_ ## Ur: context->__ ## r = value; break
-    switch (reg) {
-        SETREG(RAX, rax); SETREG(RBX, rbx); SETREG(RCX, rcx); SETREG(RDX, rdx);
-        SETREG(RSI, rsi); SETREG(RDI, rdi); SETREG(RSP, rsp); SETREG(RBP, rbp);
-        SETREG(R8,   r8); SETREG(R9,   r9); SETREG(R10, r10); SETREG(R11, r11);
-        SETREG(R12, r12); SETREG(R13, r13); SETREG(R14, r14); SETREG(R15, r15);
-        SETREG(RIP, rip);
-        default: /* ignore */
-            break;
-    }
-    #undef SETREG
-}
-
 int tinyunw_dwarf_eval_cfa_expression(uintptr_t exprStart, struct tinyunw_dwarf_saved_register_t *registers, tinyunw_word_t *result)
 {
     return TINYUNW_EINVAL;
@@ -690,7 +663,7 @@ int tinyunw_dwarf_apply_state(tinyunw_dwarf_cfa_state_t *state, tinyunw_context_
     int result = TINYUNW_ESUCCESS;
     
     if (state->cfaRegister != 0) {
-        cfaValue = tinyunw_dwarf_getreg(context, state->cfaRegister) + state->cfaOffset;
+        cfaValue = tinyunw_getreg(context, state->cfaRegister) + state->cfaOffset;
     } else if (state->cfaExpression != 0) {
         result = tinyunw_dwarf_eval_cfa_expression(state->cfaExpression, state->savedRegisters, &cfaValue);
         if (result != TINYUNW_ESUCCESS)
@@ -714,12 +687,12 @@ int tinyunw_dwarf_apply_state(tinyunw_dwarf_cfa_state_t *state, tinyunw_context_
             
             /* Read the value pointed to by the CFA plus an offset. */
             case TINYUNW_REG_CFA:
-                tinyunw_dwarf_setreg(context, i, tinyunw_dwarf_fetch_word(cfaValue + state->savedRegisters[i].value));
+                tinyunw_setreg(context, i, tinyunw_dwarf_fetch_word(cfaValue + state->savedRegisters[i].value));
                 break;
             
             /* Set the register equal to another register. */
             case TINYUNW_REG_REG:
-                tinyunw_dwarf_setreg(context, i, state->savedRegisters[state->savedRegisters[i].value].value);
+                tinyunw_setreg(context, i, state->savedRegisters[state->savedRegisters[i].value].value);
                 break;
             
             /* Read the value pointed to by/set equal to an expression. */
@@ -729,7 +702,7 @@ int tinyunw_dwarf_apply_state(tinyunw_dwarf_cfa_state_t *state, tinyunw_context_
                 
                 if ((result = tinyunw_dwarf_eval_cfa_expression(state->savedRegisters[i].value, state->savedRegisters, &value)) != TINYUNW_ESUCCESS)
                     return result;
-                tinyunw_dwarf_setreg(context, i, state->savedRegisters[i].saveLocation == TINYUNW_REG_ISEXP ? value : tinyunw_dwarf_fetch_word(value));
+                tinyunw_setreg(context, i, state->savedRegisters[i].saveLocation == TINYUNW_REG_ISEXP ? value : tinyunw_dwarf_fetch_word(value));
             }
             
             default:
@@ -740,13 +713,13 @@ int tinyunw_dwarf_apply_state(tinyunw_dwarf_cfa_state_t *state, tinyunw_context_
     /* Update RIP according to the frame. */
     if (state->savedRegisters[state->cie->returnAddressColumn].saveLocation == TINYUNW_REG_UNUSED) {
         /* This is an end-of-stack marker in DWARF, set RIP to 0. */
-        tinyunw_dwarf_setreg(context, TINYUNW_X86_64_RIP, 0);
+        tinyunw_setreg(context, TINYUNW_X86_64_RIP, 0);
     } else {
-        context->__rip = tinyunw_dwarf_getreg(context, state->cie->returnAddressColumn);
+        context->__rip = tinyunw_getreg(context, state->cie->returnAddressColumn);
     }
     
     /* The CFA is, by defintion, the stack pointer. Update RSP accordingly. */
-    tinyunw_dwarf_setreg(context, TINYUNW_X86_64_RSP, cfaValue);
+    tinyunw_setreg(context, TINYUNW_X86_64_RSP, cfaValue);
     return TINYUNW_ESUCCESS;
 }
 

@@ -131,13 +131,6 @@ struct tinyunw_dwarf_fde_t {
 typedef struct tinyunw_dwarf_fde_t tinyunw_dwarf_fde_t;
 
 /**
-  * The number of saved registers in DWARF for x86_64.
-  *
-  * @note Apple's libunwind saves a whopping 120 registers. Memory usage much?
-  */
-enum { TINYUNW_SAVED_REGISTER_COUNT = 17 };
-
-/**
   * The location of a register value in a CFA state.
   */
 enum {
