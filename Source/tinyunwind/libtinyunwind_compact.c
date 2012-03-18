@@ -53,7 +53,7 @@ int			tinyunw_try_step_unwind(tinyunw_real_cursor_t *cursor)
     tinyunw_image_t *image = tinyunw_get_image_containing_address(cursor->current_context.__rip);
     
     if (!image || image->unwindInfoSection.base == 0) {
-        TINYUNW_DEBUG("No compact unwinding info in %s for RIP 0x%llx", image->name, cursor->current_context.__rip);
+        //TINYUNW_DEBUG("No compact unwinding info in %s for RIP 0x%llx", image->name, cursor->current_context.__rip);
         return TINYUNW_ENOINFO;
     }
     
