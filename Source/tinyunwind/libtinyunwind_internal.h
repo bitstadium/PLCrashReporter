@@ -64,12 +64,6 @@ struct tinyunw_real_cursor_t
     tinyunw_context_t current_context;
 
     
-    /** DWARF stepping data */
-    
-
-    /** Compact unwind info stepping data */
-    
-
     /** Frame pointer stepping data */
 
     /** Stack frame data */
