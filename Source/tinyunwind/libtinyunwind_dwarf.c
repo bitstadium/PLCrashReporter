@@ -174,7 +174,13 @@ enum
 #define tinyunw_dwarf_read_leb128(l, ml, s) (s ? tinyunw_dwarf_read_sleb128(l, ml) : tinyunw_dwarf_read_uleb128(l, ml))
 #define tinyunw_dwarf_read_pointer(l, ml) (sizeof(uintptr_t) == sizeof(uint64_t) ? tinyunw_dwarf_read_u64(l, ml) : tinyunw_dwarf_read_u32(l, ml))
 #define tinyunw_dwarf_read_encoded_pointer(l, ml, e) ({ uintptr_t v = 0; if (_tinyunw_dwarf_read_encoded_pointer((l), (ml), (e), &v)) { return TINYUNW_EUNSPEC; } v; })
-#define tinyunw_dwarf_fetch_word(l) ({ tinyunw_word_t w = 0; uintptr_t a = (l); w = tinyunw_dwarf_read_pointer(&a, a + sizeof(tinyunw_word_t)); w; })
+
+static inline tinyunw_word_t tinyunw_dwarf_fetch_word(uintptr_t address) {
+	tinyunw_word_t w = 0;
+    
+    (void) tinyunw_read_unsafe_memory((void *)address, &w, sizeof(tinyunw_word_t));
+    return w;
+}
 
 static inline int _tinyunw_dwarf_read_uleb128(uintptr_t *loc, uintptr_t maxLoc, uint64_t *value) {
     int bits = 0;
