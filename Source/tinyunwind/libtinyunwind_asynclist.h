@@ -30,7 +30,7 @@
 #import "libtinyunwind.h"
 #import <libkern/OSAtomic.h>
 
-struct tinyunw_async_list_entry_t {
+typedef struct tinyunw_async_list_entry_t {
     /** The list data. This pointer is NOT considered owned by the entry. */
     void *data;
 
@@ -39,10 +39,9 @@ struct tinyunw_async_list_entry_t {
     
     /** The next entry in the list, or NULL. */
     struct tinyunw_async_list_entry_t *next;
-};
-typedef struct tinyunw_async_list_entry_t tinyunw_async_list_entry_t;
+} tinyunw_async_list_entry_t;
 
-struct tinyunw_async_list_t {
+typedef struct tinyunw_async_list {
     /** The lock used by writers. No lock is required for readers. */
     OSSpinLock write_lock;
 
@@ -55,8 +54,7 @@ struct tinyunw_async_list_t {
     /** The list reference count. No nodes will be deallocated while the count is greater than 0. If the count
      * reaches 0, all nodes in the free list will be deallocated. */
     int32_t refcount;
-};
-typedef struct tinyunw_async_list_t tinyunw_async_list_t;
+} tinyunw_async_list_t;
 
 /**
   * @note The async list routines do not take ownership of pointers. They will not
@@ -69,4 +67,4 @@ void tinyunw_async_list_free (tinyunw_async_list_t *list);
 void tinyunw_async_list_append (tinyunw_async_list_t *list, void *data);
 void tinyunw_async_list_remove (tinyunw_async_list_t *list, void *data);
 void tinyunw_async_list_setreading (tinyunw_async_list_t *list, bool enable);
-tinyunw_async_list_entry_t *tinyunw_async_list_next(tinyunw_async_list_t *list, tinyunw_async_list_entry_t *current);
+tinyunw_async_list_entry_t *tinyunw_async_list_next (tinyunw_async_list_t *list, tinyunw_async_list_entry_t *current);

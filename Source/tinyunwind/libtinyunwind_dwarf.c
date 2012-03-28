@@ -35,7 +35,7 @@
 #import <stdio.h>
 #import <sys/param.h>
 
-int			tinyunw_try_step_dwarf(tinyunw_real_cursor_t *cursor)
+int tinyunw_try_step_dwarf (tinyunw_real_cursor_t *cursor)
 {
 #if __x86_64__
     if (cursor->current_context.__rip == 0) {
@@ -137,8 +137,7 @@ enum {
     DW_EH_PE_pcrel = 0x10, /* rel. to addr. of encoded value */
 };
 
-enum
-{
+enum {
     DWARF_CFA_OPCODE_MASK = 0xc0,
     DWARF_CFA_OPERAND_MASK = 0x3f,
     DW_CFA_advance_loc = 0x40,
@@ -193,14 +192,14 @@ enum
 
 //#define tinyunw_dwarf_fetch_word(l) ({ tinyunw_word_t w = 0; uintptr_t a = (l); w = tinyunw_dwarf_read_pointer(&a, a + sizeof(tinyunw_word_t)); w; })
 
-static inline tinyunw_word_t tinyunw_dwarf_fetch_word(uintptr_t address) {
+static inline tinyunw_word_t tinyunw_dwarf_fetch_word (uintptr_t address) {
 	tinyunw_word_t w = 0;
     
     (void) tinyunw_read_unsafe_memory((void *)address, &w, sizeof(tinyunw_word_t));
     return w;
 }
 
-static inline int _tinyunw_dwarf_read_uleb128(uintptr_t *loc, uintptr_t maxLoc, uint64_t *value) {
+static inline int _tinyunw_dwarf_read_uleb128 (uintptr_t *loc, uintptr_t maxLoc, uint64_t *value) {
     int bits = 0;
     uint8_t rb = 0, b = 0;
     
@@ -215,7 +214,7 @@ static inline int _tinyunw_dwarf_read_uleb128(uintptr_t *loc, uintptr_t maxLoc, 
     return TINYUNW_ESUCCESS;
 }
 
-static inline int _tinyunw_dwarf_read_sleb128(uintptr_t *loc, uintptr_t maxLoc, int64_t *value) {
+static inline int _tinyunw_dwarf_read_sleb128 (uintptr_t *loc, uintptr_t maxLoc, int64_t *value) {
     int bits = 0;
     uint8_t rb = 0;
 
@@ -229,7 +228,7 @@ static inline int _tinyunw_dwarf_read_sleb128(uintptr_t *loc, uintptr_t maxLoc, 
     return TINYUNW_ESUCCESS;
 }
 
-static int _tinyunw_dwarf_read_encoded_pointer(uintptr_t *loc, uintptr_t maxLoc, uint8_t encoding, uintptr_t *value) {
+static int _tinyunw_dwarf_read_encoded_pointer (uintptr_t *loc, uintptr_t maxLoc, uint8_t encoding, uintptr_t *value) {
     uintptr_t startLoc = *loc;
     
     if (encoding == DW_EH_PE_omit) {
@@ -290,8 +289,7 @@ static int _tinyunw_dwarf_read_encoded_pointer(uintptr_t *loc, uintptr_t maxLoc,
   * Figure out whether the next entry in the frame is a CIE or an FDE. This is a
   * "peek" routine, so the current location isn't updated.
   */
-int tinyunw_dwarf_get_entry_kind(uintptr_t loc, uintptr_t maxLoc, bool isEHFrame, bool *isCIE)
-{
+int tinyunw_dwarf_get_entry_kind (uintptr_t loc, uintptr_t maxLoc, bool isEHFrame, bool *isCIE) {
     uint32_t entryLength = tinyunw_dwarf_read_u32(&loc, maxLoc);
     
     /* 64-bit entry */
@@ -315,8 +313,7 @@ int tinyunw_dwarf_get_entry_kind(uintptr_t loc, uintptr_t maxLoc, bool isEHFrame
   * Parse a CIE. It is already known that the entry is a CIE, so don't bother
   * checking again.
   */
-int tinyunw_dwarf_parse_cie(uintptr_t *loc, uintptr_t maxLoc, bool isEHFrame, tinyunw_dwarf_cie_t *cie)
-{
+int tinyunw_dwarf_parse_cie (uintptr_t *loc, uintptr_t maxLoc, bool isEHFrame, tinyunw_dwarf_cie_t *cie) {
     memset(cie, 0, sizeof(tinyunw_dwarf_cie_t));
     cie->cieLocation = *loc;
 
@@ -393,8 +390,7 @@ int tinyunw_dwarf_parse_cie(uintptr_t *loc, uintptr_t maxLoc, bool isEHFrame, ti
   * @internal
   * Parse an FDE. It's already known to be an FDE, so don't recheck.
   */
-int tinyunw_dwarf_parse_fde(uintptr_t *loc, uintptr_t baseLoc, uintptr_t maxLoc, bool isEHFrame, tinyunw_dwarf_fde_t *fde)
-{
+int tinyunw_dwarf_parse_fde (uintptr_t *loc, uintptr_t baseLoc, uintptr_t maxLoc, bool isEHFrame, tinyunw_dwarf_fde_t *fde) {
     memset(fde, 0, sizeof(tinyunw_dwarf_fde_t));
     fde->fdeLocation = *loc;
 
@@ -460,8 +456,7 @@ int tinyunw_dwarf_parse_fde(uintptr_t *loc, uintptr_t baseLoc, uintptr_t maxLoc,
   * a CEI/FDE pair associated with a given IP. It is assumed that a given image
   * has already been checked for the existence of at least some debug info.
   */
-int tinyunw_dwarf_search_image(tinyunw_image_t *image, uintptr_t ip, tinyunw_dwarf_fde_t *result)
-{
+int tinyunw_dwarf_search_image (tinyunw_image_t *image, uintptr_t ip, tinyunw_dwarf_fde_t *result) {
     /* Prefer DWARF .debug_frame over GCC .eh_frame where possible, which is all
        but never. It is assumed that */
     bool isEHFrame = (image->debugFrameSection.base == 0);
@@ -508,8 +503,7 @@ int tinyunw_dwarf_search_image(tinyunw_image_t *image, uintptr_t ip, tinyunw_dwa
     return TINYUNW_ENOINFO;
 }
 
-int tinyunw_dwarf_run_cfa_for_fde(tinyunw_dwarf_fde_t *fde, uintptr_t ip, tinyunw_dwarf_cfa_state_t *results)
-{
+int tinyunw_dwarf_run_cfa_for_fde (tinyunw_dwarf_fde_t *fde, uintptr_t ip, tinyunw_dwarf_cfa_state_t *results) {
     tinyunw_dwarf_cfa_state_t stateStack[8];
     int nstack = 0, result = 0;
     
@@ -546,8 +540,8 @@ const char *tinyunw_dwarf_opname(tinyunw_word_t opcode) {
   */
 #define TINYUNW_OP_DEBUG(msg, args...) //TINYUNW_DEBUG("%s " msg, tinyunw_dwarf_opname(opcode), ## args)
 
-int tinyunw_dwarf_run_cfa_program(tinyunw_dwarf_cie_t *cie, uintptr_t instrStart, uintptr_t instrEnd, uintptr_t ipLimit,
-                                  tinyunw_dwarf_cfa_state_t *stack, int maxstack, int *nstack)
+int tinyunw_dwarf_run_cfa_program (tinyunw_dwarf_cie_t *cie, uintptr_t instrStart, uintptr_t instrEnd, uintptr_t ipLimit,
+                                   tinyunw_dwarf_cfa_state_t *stack, int maxstack, int *nstack)
 {
     uintptr_t ipCurrent = 0;
     tinyunw_dwarf_cfa_state_t initialState = stack[*nstack];
@@ -675,13 +669,11 @@ int tinyunw_dwarf_run_cfa_program(tinyunw_dwarf_cie_t *cie, uintptr_t instrStart
     return TINYUNW_ESUCCESS;
 }
 
-int tinyunw_dwarf_eval_cfa_expression(uintptr_t exprStart, struct tinyunw_dwarf_saved_register_t *registers, tinyunw_word_t *result)
-{
+int tinyunw_dwarf_eval_cfa_expression(uintptr_t exprStart, struct tinyunw_dwarf_saved_register_t *registers, tinyunw_word_t *result) {
     return TINYUNW_EINVAL;
 }
 
-int tinyunw_dwarf_apply_state(tinyunw_dwarf_cfa_state_t *state, tinyunw_context_t *context)
-{
+int tinyunw_dwarf_apply_state(tinyunw_dwarf_cfa_state_t *state, tinyunw_context_t *context) {
     /* Note: The TINYUNW_X86_64_* constants were chosen to correspond with DWARF
        register columns. */
     

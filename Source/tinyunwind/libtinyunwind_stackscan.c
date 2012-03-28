@@ -29,8 +29,7 @@
 
 #import "libtinyunwind_internal.h"
 
-int			tinyunw_try_step_stackscan (tinyunw_real_cursor_t *cursor)
-{
+int tinyunw_try_step_stackscan (tinyunw_real_cursor_t *cursor) {
 #if __x86_64__
     const size_t search_space = 50;
     

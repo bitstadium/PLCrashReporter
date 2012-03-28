@@ -30,6 +30,7 @@
 #import "libtinyunwind.h"
 #import "libtinyunwind_image.h"
 #import "libtinyunwind_asynclist.h"
+
 #import <assert.h>
 #import <stdio.h>
 #import <unistd.h>
@@ -46,7 +47,9 @@
   *
   * @note Apple's libunwind saves a whopping 120 registers. Memory usage much?
   */
-enum { TINYUNW_SAVED_REGISTER_COUNT = 17 };
+enum {
+    TINYUNW_SAVED_REGISTER_COUNT = 17
+};
 
 /**
   * @internal
@@ -64,13 +67,13 @@ struct tinyunw_real_cursor_t
     tinyunw_context_t current_context;
 
     
-    /** Frame pointer stepping data */
+    /* Frame pointer stepping data */
 
     /** Stack frame data */
     void *fp[2];
 
 
-    /** Stack scan stepping data */
+    /* Stack scan stepping data */
     
     /** Saved stack pointer for stack scans */
     tinyunw_word_t last_stack_pointer;
@@ -81,7 +84,7 @@ __private_extern__ bool tinyunw_tracking_images;
 __private_extern__ bool tinyunw_dyld_callbacks_installed;
 __private_extern__ tinyunw_async_list_t tinyunw_loaded_images_list;
 
-static inline tinyunw_word_t tinyunw_getreg(tinyunw_context_t *context, tinyunw_word_t reg) {
+static inline tinyunw_word_t tinyunw_getreg (tinyunw_context_t *context, tinyunw_word_t reg) {
 #if __x86_64__
     #define GETREG(Ur, r) case TINYUNW_X86_64_ ## Ur: return context->__ ## r
     switch (reg) {
@@ -96,7 +99,7 @@ static inline tinyunw_word_t tinyunw_getreg(tinyunw_context_t *context, tinyunw_
     return 0;
 }
 
-static inline void tinyunw_setreg(tinyunw_context_t *context, tinyunw_word_t reg, tinyunw_word_t value) {
+static inline void tinyunw_setreg (tinyunw_context_t *context, tinyunw_word_t reg, tinyunw_word_t value) {
 #if __x86_64__
     #define SETREG(Ur, r) case TINYUNW_X86_64_ ## Ur: context->__ ## r = value; break
     switch (reg) {
@@ -116,19 +119,19 @@ static inline void tinyunw_setreg(tinyunw_context_t *context, tinyunw_word_t reg
  * @internal
  * Read memory without causing access violations.
  */
-int tinyunw_read_unsafe_memory(const void *pointer, void *destination, size_t len);
+int tinyunw_read_unsafe_memory (const void *pointer, void *destination, size_t len);
 
 /**
  * @internal
  * Try various methods of stepping through a stack.
  */
-int tinyunw_try_step_dwarf(tinyunw_real_cursor_t *cursor);
-int tinyunw_try_step_unwind(tinyunw_real_cursor_t *cursor);
-int tinyunw_try_step_fp(tinyunw_real_cursor_t *cursor);
-int tinyunw_try_step_stackscan(tinyunw_real_cursor_t *cursor);
+int tinyunw_try_step_dwarf (tinyunw_real_cursor_t *cursor);
+int tinyunw_try_step_unwind (tinyunw_real_cursor_t *cursor);
+int tinyunw_try_step_fp (tinyunw_real_cursor_t *cursor);
+int tinyunw_try_step_stackscan (tinyunw_real_cursor_t *cursor);
 
 /**
  * @internal
  * Return the image containing the given address, if any.
  */
-tinyunw_image_t *tinyunw_get_image_containing_address(uintptr_t address);
+tinyunw_image_t *tinyunw_get_image_containing_address (uintptr_t address);

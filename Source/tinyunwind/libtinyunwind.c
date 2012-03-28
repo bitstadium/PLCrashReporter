@@ -32,19 +32,17 @@
 #define TINYUNW_FETCH_REAL_CURSOR(param)		\
     tinyunw_real_cursor_t *cursor = (tinyunw_real_cursor_t *)(param)
 
-bool					tinyunw_tracking_images = false;
-bool					tinyunw_dyld_callbacks_installed = false;
-tinyunw_async_list_t	tinyunw_loaded_images_list;
+bool tinyunw_tracking_images = false;
+bool tinyunw_dyld_callbacks_installed = false;
+tinyunw_async_list_t tinyunw_loaded_images_list;
 
-int					tinyunw_read_unsafe_memory(const void *pointer, void *destination, size_t len)
-{
+int tinyunw_read_unsafe_memory(const void *pointer, void *destination, size_t len) {
     vm_size_t read_size = len;
     
     return vm_read_overwrite(mach_task_self(), (vm_address_t)pointer, len, (pointer_t)destination, &read_size);
 }
 
-tinyunw_image_t     *tinyunw_get_image_containing_address(uintptr_t address)
-{
+tinyunw_image_t *tinyunw_get_image_containing_address(uintptr_t address) {
 #if __x86_64__
     /* Optimization: The entire bottom 4GB of address space is known to be
        invalid on OS X. Immediately return NULL if the address is in that
@@ -78,8 +76,7 @@ tinyunw_image_t     *tinyunw_get_image_containing_address(uintptr_t address)
 }
 
 #if __x86_64__
-static void			tinyunw_dyld_add_image(const struct mach_header *header, intptr_t vmaddr_slide)
-{
+static void tinyunw_dyld_add_image (const struct mach_header *header, intptr_t vmaddr_slide) {
     if (tinyunw_tracking_images) {
         tinyunw_image_t *image = tinyunw_image_alloc();
         
@@ -88,8 +85,7 @@ static void			tinyunw_dyld_add_image(const struct mach_header *header, intptr_t 
     }
 }
 
-static void			tinyunw_dyld_remove_image(const struct mach_header *header, intptr_t vmaddr_slide)
-{
+static void tinyunw_dyld_remove_image (const struct mach_header *header, intptr_t vmaddr_slide) {
     /* Do NOT check here whether tracking is enabled. While failing to notice a
        newly added image is harmless, failing to notice a removed image may
        lead to crashes on attempts to read the image list. */
@@ -97,8 +93,7 @@ static void			tinyunw_dyld_remove_image(const struct mach_header *header, intptr
 }
 #endif
 
-int					tinyunw_setimagetracking(bool tracking_flag)
-{
+int tinyunw_setimagetracking (bool tracking_flag) {
 #if __x86_64__
     /* Is tracking requested and we are not already tracking? */
     if (tracking_flag && !tinyunw_tracking_images) {
@@ -120,8 +115,7 @@ int					tinyunw_setimagetracking(bool tracking_flag)
 #endif
 }
 
-int					tinyunw_getthreadcontext(tinyunw_context_t *context, thread_t thread)
-{
+int tinyunw_getthreadcontext (tinyunw_context_t *context, thread_t thread) {
 #if __x86_64__
     kern_return_t kr;
     
@@ -144,8 +138,7 @@ int					tinyunw_getthreadcontext(tinyunw_context_t *context, thread_t thread)
 #endif
 }
 
-int					tinyunw_init_cursor(tinyunw_context_t *context, tinyunw_cursor_t *fake_cursor)
-{
+int tinyunw_init_cursor (tinyunw_context_t *context, tinyunw_cursor_t *fake_cursor) {
 #if __x86_64__
     TINYUNW_FETCH_REAL_CURSOR(fake_cursor);
     
@@ -170,8 +163,7 @@ int					tinyunw_init_cursor(tinyunw_context_t *context, tinyunw_cursor_t *fake_c
 #endif
 }
 
-int				tinyunw_step(tinyunw_cursor_t *fake_cursor, tinyunw_flags_t flags)
-{
+int tinyunw_step (tinyunw_cursor_t *fake_cursor, tinyunw_flags_t flags) {
 #if __x86_64__
     TINYUNW_FETCH_REAL_CURSOR(fake_cursor);
     
@@ -219,8 +211,7 @@ int				tinyunw_step(tinyunw_cursor_t *fake_cursor, tinyunw_flags_t flags)
 #endif
 }
 
-int				tinyunw_get_register(tinyunw_cursor_t *fake_cursor, tinyunw_regnum_t regnum, tinyunw_word_t *value)
-{
+int tinyunw_get_register (tinyunw_cursor_t *fake_cursor, tinyunw_regnum_t regnum, tinyunw_word_t *value) {
 #if __x86_64__
     TINYUNW_FETCH_REAL_CURSOR(fake_cursor);
     
@@ -259,8 +250,7 @@ int				tinyunw_get_register(tinyunw_cursor_t *fake_cursor, tinyunw_regnum_t regn
 #endif
 }
 
-const char*		tinyunw_register_name(tinyunw_regnum_t regnum)
-{
+const char *tinyunw_register_name (tinyunw_regnum_t regnum) {
 #if __x86_64__
     #define TINYUNW_REGNAME(constant, name)	\
         case TINYUNW_X86_64_ ## constant:	\

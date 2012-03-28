@@ -32,7 +32,7 @@
 _tinyunw_getcontext:
 
 #
-# extern int tinyunw_getcontext(tinyunw_context_t *context)
+# extern int tinyunw_getcontext (tinyunw_context_t *context)
 #
 # On entry: 
 #	context pointer is in rdi

@@ -50,18 +50,15 @@
 # define SECT_DEBUGFRAME "__debug_frame"
 #endif
 
-static inline tinyunw_image_piece_t tinyunw_piece_from_section(struct section_64 *section, intptr_t vmaddr_slide)
-{
+static inline tinyunw_image_piece_t tinyunw_piece_from_section(struct section_64 *section, intptr_t vmaddr_slide) {
     return (tinyunw_image_piece_t){ .base = section->addr + vmaddr_slide, .end = section->addr + vmaddr_slide + section->size, .length = section->size };
 }
 
-tinyunw_image_t *tinyunw_image_alloc(void)
-{
+tinyunw_image_t *tinyunw_image_alloc (void) {
     return calloc(1, sizeof(tinyunw_image_t));
 }
 
-void tinyunw_image_free(tinyunw_image_t *image)
-{
+void tinyunw_image_free (tinyunw_image_t *image) {
     if (image->path)
         free(image->path);
     if (image->name)
@@ -69,8 +66,7 @@ void tinyunw_image_free(tinyunw_image_t *image)
     free(image);
 }
 
-int			tinyunw_image_parse_from_header(tinyunw_image_t *image, uintptr_t header, intptr_t vmaddr_slide)
-{
+int tinyunw_image_parse_from_header (tinyunw_image_t *image, uintptr_t header, intptr_t vmaddr_slide) {
     Dl_info info;
     
     if (dladdr((void *)header, &info) != 0) {
@@ -136,8 +132,7 @@ int			tinyunw_image_parse_from_header(tinyunw_image_t *image, uintptr_t header, 
     return TINYUNW_ESUCCESS;
 }
 
-void           tinyunw_async_list_remove_image_by_header (tinyunw_async_list_t *list, uintptr_t header)
-{
+void tinyunw_async_list_remove_image_by_header (tinyunw_async_list_t *list, uintptr_t header) {
     tinyunw_async_list_entry_t *entry = NULL;
     
     /* This will result in two linear searches of the async list, but it allows

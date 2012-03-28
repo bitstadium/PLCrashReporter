@@ -46,7 +46,7 @@
   * DWARF data may be in 32 or 64 bits in the file; for simplicity, all data
   * is upconverted to 64-bit in parsed structures.
   */
-struct tinyunw_dwarf_cie_t {
+typedef struct tinyunw_dwarf_cie {
     /** The CIE's raw offset within the debug information section. */
     uintptr_t cieLocation;
     
@@ -95,13 +95,12 @@ struct tinyunw_dwarf_cie_t {
       * DWARF step time. This structure is meant to reduce memory allocation,
       * not encapsulate all available information. */
     uintptr_t initialInstructionsStart;
-};
-typedef struct tinyunw_dwarf_cie_t tinyunw_dwarf_cie_t;
+} tinyunw_dwarf_cie_t;
 
 /**
   * A parsed Frame Descriptor Entry.
   */
-struct tinyunw_dwarf_fde_t {
+typedef struct tinyunw_dwarf_fde {
     /** The FDE's raw offset within the debug information section. */
     uintptr_t fdeLocation;
     
@@ -127,8 +126,7 @@ struct tinyunw_dwarf_fde_t {
     
     /** The offset in the debug info section to the FDE's LSDA. */
     uintptr_t lsdaStart;
-};
-typedef struct tinyunw_dwarf_fde_t tinyunw_dwarf_fde_t;
+} tinyunw_dwarf_fde_t;
 
 /**
   * The location of a register value in a CFA state.
@@ -145,7 +143,7 @@ enum {
 /**
   * A saved state obtained from running a DWARF CFA program.
   */
-struct tinyunw_dwarf_cfa_state_t {
+typedef struct tinyunw_dwarf_cfa_state_t {
     /** The saved registers. */
     struct tinyunw_dwarf_saved_register_t {
         /** The location from which the register value is obtained. */
@@ -163,8 +161,7 @@ struct tinyunw_dwarf_cfa_state_t {
     
     /** The CIE this state was applied to. */
     tinyunw_dwarf_cie_t *cie;
-};
-typedef struct tinyunw_dwarf_cfa_state_t tinyunw_dwarf_cfa_state_t;
+} tinyunw_dwarf_cfa_state_t;
 
 
 /** General parsing routines. */
@@ -174,16 +171,16 @@ typedef struct tinyunw_dwarf_cfa_state_t tinyunw_dwarf_cfa_state_t;
   * Search a binary image (either .debug_frame or .eh_frame), searching for
   * a CEI/FDE pair associated with a given IP.
   */
-int tinyunw_dwarf_search_image(tinyunw_image_t *image, uintptr_t ip, tinyunw_dwarf_fde_t *result);
+int tinyunw_dwarf_search_image (tinyunw_image_t *image, uintptr_t ip, tinyunw_dwarf_fde_t *result);
 
 /** CFA program routines. */
 
-int tinyunw_dwarf_run_cfa_for_fde(tinyunw_dwarf_fde_t *fde, uintptr_t ip, tinyunw_dwarf_cfa_state_t *results);
+int tinyunw_dwarf_run_cfa_for_fde (tinyunw_dwarf_fde_t *fde, uintptr_t ip, tinyunw_dwarf_cfa_state_t *results);
 
 /**
   * @internal
   * The results are placed on the top of the stack (stack[nstack]).
   */
-int tinyunw_dwarf_run_cfa_program(tinyunw_dwarf_cie_t *cie, uintptr_t instrStart, uintptr_t instrEnd, uintptr_t ipLimit,
-                                  tinyunw_dwarf_cfa_state_t *stack, int maxstack, int *nstack);
-int tinyunw_dwarf_apply_state(tinyunw_dwarf_cfa_state_t *state, tinyunw_context_t *context);
+int tinyunw_dwarf_run_cfa_program (tinyunw_dwarf_cie_t *cie, uintptr_t instrStart, uintptr_t instrEnd, uintptr_t ipLimit,
+                                   tinyunw_dwarf_cfa_state_t *stack, int maxstack, int *nstack);
+int tinyunw_dwarf_apply_state (tinyunw_dwarf_cfa_state_t *state, tinyunw_context_t *context);

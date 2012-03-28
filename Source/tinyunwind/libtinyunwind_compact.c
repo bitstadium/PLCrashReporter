@@ -30,20 +30,19 @@
 #import "libtinyunwind_internal.h"
 #import <mach-o/compact_unwind_encoding.h>
 
-struct tinyunw_unwind_info_t {
+typedef struct tinyunw_unwind_info {
     uintptr_t ipStart, ipEnd;
     uint32_t encoding;
-};
+} tinyunw_unwind_info_t;
 
 #if __x86_64__
-static int tinyunw_unwind_find_info(tinyunw_image_t *image, uintptr_t ip, struct tinyunw_unwind_info_t *info);
-static int tinyunw_unwind_update_state_from_info(tinyunw_image_t *image, struct tinyunw_unwind_info_t *info, tinyunw_context_t *context);
-static int tinyunw_unwind_update_state_with_rbp(tinyunw_image_t *image, struct tinyunw_unwind_info_t *info, tinyunw_context_t *context);
-static int tinyunw_unwind_update_state_with_frame(tinyunw_image_t *image, struct tinyunw_unwind_info_t *info, bool indirect, tinyunw_context_t *context);
+static int tinyunw_unwind_find_info (tinyunw_image_t *image, uintptr_t ip, tinyunw_unwind_info_t *info);
+static int tinyunw_unwind_update_state_from_info (tinyunw_image_t *image, tinyunw_unwind_info_t *info, tinyunw_context_t *context);
+static int tinyunw_unwind_update_state_with_rbp (tinyunw_image_t *image, tinyunw_unwind_info_t *info, tinyunw_context_t *context);
+static int tinyunw_unwind_update_state_with_frame (tinyunw_image_t *image, tinyunw_unwind_info_t *info, bool indirect, tinyunw_context_t *context);
 #endif
 
-int			tinyunw_try_step_unwind(tinyunw_real_cursor_t *cursor)
-{
+int tinyunw_try_step_unwind (tinyunw_real_cursor_t *cursor) {
 #if __x86_64__
     if (cursor->current_context.__rip == 0) {
         TINYUNW_DEBUG("RIP is null, definitely no frame.");
@@ -57,7 +56,7 @@ int			tinyunw_try_step_unwind(tinyunw_real_cursor_t *cursor)
         return TINYUNW_ENOINFO;
     }
     
-    struct tinyunw_unwind_info_t info;
+    tinyunw_unwind_info_t info;
     int result = 0;
     
     if ((result = tinyunw_unwind_find_info(image, cursor->current_context.__rip, &info)) != TINYUNW_ESUCCESS) {
@@ -70,7 +69,7 @@ int			tinyunw_try_step_unwind(tinyunw_real_cursor_t *cursor)
 }
 
 #if __x86_64__
-int tinyunw_unwind_find_info(tinyunw_image_t *image, uintptr_t ip, struct tinyunw_unwind_info_t *info) {
+int tinyunw_unwind_find_info (tinyunw_image_t *image, uintptr_t ip, tinyunw_unwind_info_t *info) {
     struct unwind_info_section_header *header = (struct unwind_info_section_header *)(image->unwindInfoSection.base);
     
     if (header->version != UNWIND_SECTION_VERSION) {
@@ -189,7 +188,7 @@ int tinyunw_unwind_find_info(tinyunw_image_t *image, uintptr_t ip, struct tinyun
     return TINYUNW_ESUCCESS;
 }
 
-int tinyunw_unwind_update_state_from_info(tinyunw_image_t *image, struct tinyunw_unwind_info_t *info, tinyunw_context_t *context) {
+int tinyunw_unwind_update_state_from_info (tinyunw_image_t *image, tinyunw_unwind_info_t *info, tinyunw_context_t *context) {
     switch (info->encoding & UNWIND_X86_64_MODE_MASK) {
         case UNWIND_X86_64_MODE_COMPATIBILITY:
             /* We don't support the compatibility mode, and neither does Apple's
@@ -225,8 +224,7 @@ static const tinyunw_regnum_t regmap[0x7] = {
 };
         
 
-int tinyunw_unwind_update_state_with_rbp(tinyunw_image_t *image, struct tinyunw_unwind_info_t *info, tinyunw_context_t *context)
-{
+int tinyunw_unwind_update_state_with_rbp (tinyunw_image_t *image, tinyunw_unwind_info_t *info, tinyunw_context_t *context) {
     uint32_t regoffset = GET_BITS(info->encoding, UNWIND_X86_64_RBP_FRAME_OFFSET),
              reglocs = GET_BITS(info->encoding, UNWIND_X86_64_RBP_FRAME_REGISTERS);
     uintptr_t regs = context->__rbp - regoffset * sizeof(tinyunw_word_t);
@@ -250,8 +248,7 @@ int tinyunw_unwind_update_state_with_rbp(tinyunw_image_t *image, struct tinyunw_
     return TINYUNW_ESUCCESS;
 }
 
-int tinyunw_unwind_update_state_with_frame(tinyunw_image_t *image, struct tinyunw_unwind_info_t *info, bool indirect, tinyunw_context_t *context)
-{
+int tinyunw_unwind_update_state_with_frame (tinyunw_image_t *image, tinyunw_unwind_info_t *info, bool indirect, tinyunw_context_t *context) {
     uint32_t stacksize = GET_BITS(info->encoding, UNWIND_X86_FRAMELESS_STACK_SIZE) * sizeof(tinyunw_word_t),
              stackadj = GET_BITS(info->encoding, UNWIND_X86_FRAMELESS_STACK_ADJUST),
              nregs = GET_BITS(info->encoding, UNWIND_X86_FRAMELESS_STACK_REG_COUNT),

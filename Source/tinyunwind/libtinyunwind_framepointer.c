@@ -29,7 +29,6 @@
 
 #import "libtinyunwind_internal.h"
 
-int			tinyunw_try_step_fp(tinyunw_real_cursor_t *cursor)
-{
+int tinyunw_try_step_fp (tinyunw_real_cursor_t *cursor) {
     return TINYUNW_ENOINFO;
 }

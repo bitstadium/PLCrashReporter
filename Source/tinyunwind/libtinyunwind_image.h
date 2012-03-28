@@ -33,7 +33,7 @@
 #import <mach/mach.h>
 #import "libtinyunwind_asynclist.h"
 
-struct tinyunw_image_piece_t {
+typedef struct tinyunw_image_piece {
     /* The first address in the "piece", adjusted for VM address slide. */
     uintptr_t base;
     
@@ -42,10 +42,9 @@ struct tinyunw_image_piece_t {
     
     /* The length of the "piece". end = base + length. */
     size_t length;
-};
-typedef struct tinyunw_image_piece_t tinyunw_image_piece_t;
+} tinyunw_image_piece_t;
 
-struct tinyunw_image_t {
+typedef struct tinyunw_image {
     /** The binary image's header address. */
     uintptr_t header;
     
@@ -72,13 +71,12 @@ struct tinyunw_image_t {
     
     /** The binary image's __unwind_info section. */
     tinyunw_image_piece_t unwindInfoSection;
-};
-typedef struct tinyunw_image_t tinyunw_image_t;
+} tinyunw_image_t;
 
 /**
   * @warning None of these routines are async-signal safe.
   */
-tinyunw_image_t *tinyunw_image_alloc(void);
-int tinyunw_image_parse_from_header(tinyunw_image_t *image, uintptr_t header, intptr_t vmaddr_slide);
-void tinyunw_image_free(tinyunw_image_t *image);
+tinyunw_image_t *tinyunw_image_alloc (void);
+int tinyunw_image_parse_from_header (tinyunw_image_t *image, uintptr_t header, intptr_t vmaddr_slide);
+void tinyunw_image_free (tinyunw_image_t *image);
 void tinyunw_async_list_remove_image_by_header (tinyunw_async_list_t *list, uintptr_t header);

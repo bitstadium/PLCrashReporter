@@ -73,8 +73,9 @@ typedef uint8_t tinyunw_context_t;
   * An unwinding cursor, encapsulating DWARF, compact unwind, and stack scan
   * state information. This is opaque; don't peek inside!
   */
-struct tinyunw_cursor_t { uint64_t opaque[120]; };
-typedef struct tinyunw_cursor_t tinyunw_cursor_t;
+typedef struct tinyunw_cursor_t {
+    uint64_t opaque[120];
+} tinyunw_cursor_t;
 
 /**
   * @internal
@@ -164,7 +165,7 @@ typedef int tinyunw_flags_t;
   *
   * @warning This function is not async-signal safe, nor is it thread-safe.
   */
-extern int          tinyunw_setimagetracking(bool tracking_flag);
+extern int tinyunw_setimagetracking (bool tracking_flag);
 
 /**
   * Initialize an unwinding context based on the current thread.
@@ -173,7 +174,7 @@ extern int          tinyunw_setimagetracking(bool tracking_flag);
   * @return Returns TINYUNW_ESUCCESS on success. There are no failure modes for
   * this function.
   */
-extern int          tinyunw_getcontext(tinyunw_context_t *context);
+extern int tinyunw_getcontext (tinyunw_context_t *context);
 
 /**
   * Initialize an unwinding context based on an arbitrary thread.
@@ -183,7 +184,7 @@ extern int          tinyunw_getcontext(tinyunw_context_t *context);
   * @return Returns TINYUNW_ESUCCESS on success, or TINYUNW_EBADFRAME if the
   * thread appears invalid.
   */
-extern int          tinyunw_getthreadcontext(tinyunw_context_t *context, thread_t thread);
+extern int tinyunw_getthreadcontext (tinyunw_context_t *context, thread_t thread);
 
 /**
   * Initialize a cursor for unwinding based on the given context.
@@ -195,7 +196,7 @@ extern int          tinyunw_getthreadcontext(tinyunw_context_t *context, thread_
   * @return Returns TINYUNW_ESUCCESS on success, or TINYUNW_EINVAL if the context
   * appears invalid.
   */
-extern int          tinyunw_init_cursor(tinyunw_context_t *context, tinyunw_cursor_t *cursor);
+extern int tinyunw_init_cursor (tinyunw_context_t *context, tinyunw_cursor_t *cursor);
 
 /**
   * Step a cursor up its stack.
@@ -209,7 +210,7 @@ extern int          tinyunw_init_cursor(tinyunw_context_t *context, tinyunw_curs
   * last frame to return TINYUNW_ESUCCESS was the top of the stack. This differs
   * from libunwind's behavior.
   */
-extern int          tinyunw_step(tinyunw_cursor_t *cursor, tinyunw_flags_t flags);
+extern int tinyunw_step (tinyunw_cursor_t *cursor, tinyunw_flags_t flags);
 
 /**
   * Read a register from a cursor's current frame.
@@ -226,7 +227,7 @@ extern int          tinyunw_step(tinyunw_cursor_t *cursor, tinyunw_flags_t flags
   * if frame pointers are being scanned, and other registers may or may not be
   * valid based on what debugging/unwinding information is available and used.
   */
-extern int          tinyunw_get_register(tinyunw_cursor_t *cursor, tinyunw_regnum_t regnum, tinyunw_word_t *value);
+extern int tinyunw_get_register (tinyunw_cursor_t *cursor, tinyunw_regnum_t regnum, tinyunw_word_t *value);
 
 /**
   * Return the human-readable name of a register.
@@ -235,7 +236,7 @@ extern int          tinyunw_get_register(tinyunw_cursor_t *cursor, tinyunw_regnu
   * @return A static string containing the NULL-terminated name of the register.
   * This string is read-only and guaranteed to live forever.
   */
-extern const char*  tinyunw_register_name(tinyunw_regnum_t regnum);
+extern const char *tinyunw_register_name (tinyunw_regnum_t regnum);
 
 #if __cplusplus__
 }
