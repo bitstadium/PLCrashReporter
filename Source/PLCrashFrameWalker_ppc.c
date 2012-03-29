@@ -361,10 +361,4 @@ const char *plframe_get_regname (plframe_regnum_t regnum) {
     abort();
 }
 
-// PLFrameWalker API
-plframe_error_t plframe_get_symbol (plframe_cursor_t *cursor, plframe_greg_t *symstart, const char ** const symname)
-{
-    return PLFRAME_ENOTSUP;
-}
-
 #endif

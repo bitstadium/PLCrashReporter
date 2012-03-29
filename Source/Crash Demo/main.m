@@ -39,8 +39,8 @@ void post_crash_callback (siginfo_t *info, ucontext_t *uap, void *context) {
 void thread_stackFrame3 (int crashThreaded) {
     /* Trigger a threaded crash */
     if (crashThreaded)
-    	printf("%s", (char *)0x123124);
-	    //((char *)NULL)[2] = 0;
+    	//printf("%s", (char *)0x123124);
+	    ((char *)NULL)[2] = 0;
     sleep(2);
 }
 

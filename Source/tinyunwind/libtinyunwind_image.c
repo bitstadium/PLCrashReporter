@@ -67,29 +67,77 @@ void tinyunw_image_free (tinyunw_image_t *image) {
     free(image);
 }
 
-int tinyunw_image_parse_from_header (tinyunw_image_t *image, uintptr_t header, intptr_t vmaddr_slide) {
-    Dl_info info;
+static struct tinyunw_image_piece_t tinyunw_image_make_piece(uintptr_t base, uint64_t len) {
+    return (tinyunw_image_piece_t){ .base = base, .length = len, .end = base + len };
+}
+
+static int  tinyunw_image_parse_from_header32(tinyunw_image_t *image, uintptr_t header, intptr_t vmaddr_slide)
+{
+    const struct mach_header *header32 = (const struct mach_header *) header;
+    struct load_command *cmd;
     
-    if (dladdr((void *)header, &info) != 0) {
-        image->path = strdup(info.dli_fname);
-        image->name = strdup(basename(image->path));
+    image->is64Bit = false;
+    cmd = (struct load_command *) (header32 + 1);
+    
+    for (uint32_t i = 0; cmd != NULL && i < header32->ncmds; ++i) {
+        if (cmd->cmd == LC_SEGMENT) {
+            struct segment_command *segment = (struct segment_command *) cmd;
+            
+            if (strcmp(segment->segname, SEG_TEXT) == 0) {
+                struct section *section = (struct section *) (segment + 1);
+                
+                image->textSection = tinyunw_image_make_piece(segment->vmsize + vmaddr_slide - segment->fileoff, segment->vmsize);
+                for (uint32_t j = 0; section != NULL && j < segment->nsects; ++j) {
+                    if (strcmp(section->sectname, SECT_TEXT) == 0) {
+                        image->textSection = tinyunw_image_make_piece(section->addr + vmaddr_slide, section->size);
+                    } else if (strcmp(section->sectname, SECT_EHFRAME) == 0) {
+                        image->exceptionFrameSection = tinyunw_image_make_piece(section->addr + vmaddr_slide, section->size);
+                    } else if (strcmp(section->sectname, SECT_UNWINDINFO) == 0) {
+                        image->unwindInfoSection = tinyunw_image_make_piece(section->addr + vmaddr_slide, section->size);
+                    } else if (strcmp(section->sectname, SECT_DEBUGFRAME) == 0) {
+                        image->debugFrameSection = tinyunw_image_make_piece(section->addr + vmaddr_slide, section->size);
+                    }
+                    ++section;
+                }
+            } else if (strcmp(segment->segname, SEG_DWARF) == 0) {
+                struct section *section = (struct section *) (segment + 1);
+                
+                for (uint32_t j = 0; section != NULL && j < segment->nsects; ++j) {
+                    if (strcmp(section->sectname, SECT_EHFRAME) == 0) {
+                        image->exceptionFrameSection = tinyunw_image_make_piece(section->addr + vmaddr_slide, section->size);
+                    } else if (strcmp(section->sectname, SECT_DEBUGFRAME) == 0) {
+                        image->debugFrameSection = tinyunw_image_make_piece(section->addr + vmaddr_slide, section->size);
+                    }
+                    ++section;
+                }
+            } else if (strcmp(segment->segname, SEG_LINKEDIT) == 0) {
+                image->linkeditSegment = tinyunw_image_make_piece(segment->vmaddr + vmaddr_slide - segment->fileoff, segment->vmsize);
+            }
+        } else if (cmd->cmd == LC_SYMTAB) {
+            struct symtab_command *symtab = (struct symtab_command *) cmd;
+            
+            image->symbolTable = tinyunw_image_make_piece(symtab->symoff, symtab->nsyms * sizeof(struct nlist));
+            image->stringTable = tinyunw_image_make_piece(symtab->stroff, symtab->strsize);
+        } else if (cmd->cmd == LC_DYSYMTAB) {
+            struct dysymtab_command *dysymtab = (struct dysymtab_command *) cmd;
+            
+            image->symbolInformation.firstGlobalSymbol = dysymtab->iextdefsym;
+            image->symbolInformation.numGlobalSymbols = dysymtab->nextdefsym;
+            image->symbolInformation.firstLocalSymbol = dysymtab->ilocalsym;
+            image->symbolInformation.numLocalSymbols = dysymtab->nlocalsym;
+        }
+        cmd = (struct load_command *) ((uint8_t *) cmd + cmd->cmdsize);
     }
     
+    return TINYUNW_ESUCCESS;
+}
+
+static int  tinyunw_image_parse_from_header64(tinyunw_image_t *image, uintptr_t header, intptr_t vmaddr_slide)
+{ 
     const struct mach_header_64 *header64 = (const struct mach_header_64 *) header;
     struct load_command *cmd;
     
-    if (header64->magic != MH_MAGIC_64 && header64->magic != MH_CIGAM_64) {
-        return TINYUNW_EINVAL;
-    }
-    
-    image->header = header;
-    image->vmaddrSlide = vmaddr_slide;
-    image->textSegment = (tinyunw_image_piece_t){ 0, 0 };
-    image->textSection = (tinyunw_image_piece_t){ 0, 0 };
-    image->exceptionFrameSection = (tinyunw_image_piece_t){ 0, 0 };
-    image->debugFrameSection = (tinyunw_image_piece_t){ 0, 0 };
-    image->unwindInfoSection = (tinyunw_image_piece_t){ 0, 0 };
-    
+    image->is64Bit = true;
     cmd = (struct load_command *) (header64 + 1);
     
     for (uint32_t i = 0; cmd != NULL && i < header64->ncmds; ++i) {
@@ -99,9 +147,7 @@ int tinyunw_image_parse_from_header (tinyunw_image_t *image, uintptr_t header, i
             if (strcmp(segment->segname, SEG_TEXT) == 0) {
                 struct section_64 *section = (struct section_64 *) (segment + 1);
                 
-                image->textSegment.base = segment->vmaddr + vmaddr_slide;
-                image->textSegment.length = segment->vmsize;
-                image->textSegment.end = image->textSegment.base + image->textSegment.length;
+                image->textSection = tinyunw_image_make_piece(segment->vmsize + vmaddr_slide - segment->fileoff, segment->vmsize);
                 for (uint32_t j = 0; section != NULL && j < segment->nsects; ++j) {
                     if (strcmp(section->sectname, SECT_TEXT) == 0) {
                         image->textSection = tinyunw_piece_from_section(section, vmaddr_slide);
@@ -126,24 +172,13 @@ int tinyunw_image_parse_from_header (tinyunw_image_t *image, uintptr_t header, i
                     ++section;
                 }
             } else if (strcmp(segment->segname, SEG_LINKEDIT) == 0) {
-                /* dyld modifies the linkedit segment base VM address by the 
-                   file offset. Comments therein suggest this is unnecessary for
-                   the __TEXT segment because __TEXT is always at the start of
-                   the file. */
-                image->linkeditSegment.base = segment->vmaddr + vmaddr_slide - segment->fileoff;
-                image->linkeditSegment.length = segment->vmsize;
-                image->linkeditSegment.end = image->linkeditSegment.base + image->linkeditSegment.length;
+                image->linkeditSegment = tinyunw_image_make_piece(segment->vmaddr + vmaddr_slide - segment->fileoff, segment->vmsize);
             }
         } else if (cmd->cmd == LC_SYMTAB) {
             struct symtab_command *symtab = (struct symtab_command *) cmd;
             
-            image->symbolTable.base = symtab->symoff;
-            image->symbolTable.length = symtab->nsyms * sizeof(struct nlist_64);
-            image->symbolTable.end = image->symbolTable.base + image->symbolTable.length;
-            
-            image->stringTable.base = symtab->stroff;
-            image->stringTable.length = symtab->strsize;
-            image->stringTable.end = image->stringTable.base + image->stringTable.length;
+            image->symbolTable = tinyunw_image_make_piece(symtab->symoff, symtab->nsyms * sizeof(struct nlist_64));
+            image->stringTable = tinyunw_image_make_piece(symtab->stroff, symtab->strsize);
         } else if (cmd->cmd == LC_DYSYMTAB) {
             struct dysymtab_command *dysymtab = (struct dysymtab_command *) cmd;
             
@@ -155,16 +190,48 @@ int tinyunw_image_parse_from_header (tinyunw_image_t *image, uintptr_t header, i
         cmd = (struct load_command *) ((uint8_t *) cmd + cmd->cmdsize);
     }
     
-    /* After all commands are parsed, update the symbol and strings tables as
-       necessary relative to the __LINKEDIT segment. */
-    if (image->linkeditSegment.base != 0 && image->symbolTable.base != 0) {
-        image->symbolTable.base += image->linkeditSegment.base;
-        image->symbolTable.end += image->linkeditSegment.base;
-        image->stringTable.base += image->linkeditSegment.base;
-        image->stringTable.end += image->linkeditSegment.base;
+    return TINYUNW_ESUCCESS;
+}
+
+int tinyunw_image_parse_from_header (tinyunw_image_t *image, uintptr_t header, intptr_t vmaddr_slide) {
+    Dl_info info;
+    
+    if (dladdr((void *)header, &info) != 0) {
+        image->path = strdup(info.dli_fname);
+        image->name = strdup(basename(image->path));
     }
     
-    return TINYUNW_ESUCCESS;
+    image->header = header;
+    image->vmaddrSlide = vmaddr_slide;
+    image->textSegment = (tinyunw_image_piece_t){ 0, 0 };
+    image->textSection = (tinyunw_image_piece_t){ 0, 0 };
+    image->exceptionFrameSection = (tinyunw_image_piece_t){ 0, 0 };
+    image->debugFrameSection = (tinyunw_image_piece_t){ 0, 0 };
+    image->unwindInfoSection = (tinyunw_image_piece_t){ 0, 0 };
+    
+    const struct mach_header *header32 = (const struct mach_header *) header;
+    int result = 0;
+    
+    if (header32->magic == MH_MAGIC || header32->magic == MH_CIGAM) {
+        result = tinyunw_image_parse_from_header32(image, header, vmaddr_slide);
+    } else if (header32->magic == MH_MAGIC_64 || header32->magic == MH_CIGAM_64) {
+        result = tinyunw_image_parse_from_header64(image, header, vmaddr_slide);
+    } else {
+        result = TINYUNW_EINVAL;
+    }
+    
+    if (result == TINYUNW_ESUCCESS) {
+        /* After all commands are parsed, update the symbol and strings tables as
+           necessary relative to the __LINKEDIT segment. */
+        if (image->linkeditSegment.base != 0 && image->symbolTable.base != 0) {
+            image->symbolTable.base += image->linkeditSegment.base;
+            image->symbolTable.end += image->linkeditSegment.base;
+            image->stringTable.base += image->linkeditSegment.base;
+            image->stringTable.end += image->linkeditSegment.base;
+        }
+    }
+    
+    return result;
 }
 
 void tinyunw_async_list_remove_image_by_header (tinyunw_async_list_t *list, uintptr_t header) {

@@ -45,6 +45,9 @@ typedef struct tinyunw_image_piece {
 } tinyunw_image_piece_t;
 
 typedef struct tinyunw_image {
+    /** Whether the image is 64-bit. Affects iteration of the symbol table. */
+    bool is64Bit;
+
     /** The binary image's header address. */
     uintptr_t header;
     
@@ -96,7 +99,6 @@ typedef struct tinyunw_image {
         uint32_t numLocalSymbols;
     } symbolInformation;
 } tinyunw_image_t;
-typedef struct tinyunw_image_t tinyunw_image_t;
 
 /**
   * @warning None of these routines are async-signal safe.

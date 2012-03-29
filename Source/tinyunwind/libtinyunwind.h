@@ -57,13 +57,15 @@ extern "C" {
  * @internal
  * A processor state context. It is safe and correct to pass an x86_thread_state64_t
  * anywhere a tinyunw_context_t is expected.
- *
- * @note On non-AMD64 platforms, it's defined to a meaningless byte. It shouldn't
- * be a problem for it to be different sizes on different platforms. Keep in mind
- * that at present this is just to make it build.
  */
-#if __x86_64__
+#if defined(__x86_64__)
 typedef x86_thread_state64_t tinyunw_context_t;
+#elif defined(__i386__)
+typedef x86_thread_state_t tinyunw_context_t;
+#elif defined(__arm__)
+typedef arm_thread_state_t tinyunw_context_t;
+#elif defined(__ppc__)
+typedef ppc_thread_state_t tinyunw_context_t;
 #else
 typedef uint8_t tinyunw_context_t;
 #endif
@@ -125,7 +127,11 @@ typedef int tinyunw_regnum_t;
   * @internal
   * A type which is the size of both a word and a register.
   */
+#if defined(__x86_64__)
 typedef uint64_t tinyunw_word_t;
+#elif defined(__i386__) || defined(__arm__) || defined(__ppc__)
+typedef uint32_t tinyunw_word_t;
+#endif
 
 /**
   * @internal

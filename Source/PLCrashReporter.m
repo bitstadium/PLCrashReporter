@@ -312,10 +312,9 @@ static void uncaught_exception_handler (NSException *exception) {
 
     /* libtinyunwind does not currently build for ARM, so to avoid breaking the
        iOS build, #if it out here. */
-#if __x86_64__
+
     /* Set up libtinyunwind. */
     tinyunw_setimagetracking(true);
-#endif
 
     /* Enable the signal handler */
     if (![[PLCrashSignalHandler sharedHandler] registerHandlerWithCallback: &signal_handler_callback context: &signal_handler_context error: outError])

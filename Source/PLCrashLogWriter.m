@@ -770,14 +770,16 @@ static size_t plcrash_writer_write_thread_registers (plcrash_async_file_t *file,
 static size_t plcrash_writer_write_thread_frame (plcrash_async_file_t *file, uint64_t pcval, plframe_cursor_t *cursor) {
     size_t rv = 0;
     plframe_greg_t symstart;
+    uint64_t savesym;
     const char * symname;
 
     rv += plcrash_writer_pack(file, PLCRASH_PROTO_THREAD_FRAME_PC_ID, PLPROTOBUF_C_TYPE_UINT64, &pcval);
     
     if (cursor && plframe_get_symbol(cursor, &symstart, &symname) == PLFRAME_ESUCCESS) {
         /* If we have a symbol, write its info. */
+        savesym = symstart;
         rv += plcrash_writer_pack(file, PLCRASH_PROTO_THREAD_FRAME_SYMBOL_NAME, PLPROTOBUF_C_TYPE_STRING, symname);
-        rv += plcrash_writer_pack(file, PLCRASH_PROTO_THREAD_FRAME_SYMBOL_START, PLPROTOBUF_C_TYPE_UINT64, &symstart);
+        rv += plcrash_writer_pack(file, PLCRASH_PROTO_THREAD_FRAME_SYMBOL_START, PLPROTOBUF_C_TYPE_UINT64, &savesym);
     }
 
     return rv;

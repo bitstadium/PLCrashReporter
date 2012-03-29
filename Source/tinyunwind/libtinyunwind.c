@@ -43,14 +43,16 @@ int tinyunw_read_unsafe_memory(const void *pointer, void *destination, size_t le
     return vm_read_overwrite(mach_task_self(), (vm_address_t)pointer, len, (pointer_t)destination, &read_size);
 }
 
-tinyunw_image_t *tinyunw_get_image_containing_address(uintptr_t address) {
-#if __x86_64__
-    /* Optimization: The entire bottom 4GB of address space is known to be
-       invalid on OS X. Immediately return NULL if the address is in that
+tinyunw_image_t     *tinyunw_get_image_containing_address(uintptr_t address)
+{
+#if defined(__x86_64__)
+    /* Optimization: For 64-bit, the entire bottom 4GB of address space is known
+       to be invalid on OS X. Immediately return NULL if the address is in that
        range. */
     if ((address & 0xFFFFFFFF00000000) == 0)
         return NULL;
-    
+#endif
+
     /* The global image list is invalid if the dyld callbacks haven't been
        installed yet (image tracking has never been activated). Without an
        image list, there's no way to figure out what image contains the address
@@ -71,11 +73,9 @@ tinyunw_image_t *tinyunw_get_image_containing_address(uintptr_t address) {
         }
     }
     tinyunw_async_list_setreading(&tinyunw_loaded_images_list, false);
-#endif
     return NULL;
 }
 
-#if __x86_64__
 static void tinyunw_dyld_add_image (const struct mach_header *header, intptr_t vmaddr_slide) {
     if (tinyunw_tracking_images) {
         tinyunw_image_t *image = tinyunw_image_alloc();
@@ -91,7 +91,6 @@ static void tinyunw_dyld_remove_image (const struct mach_header *header, intptr_
        lead to crashes on attempts to read the image list. */
     tinyunw_async_list_remove_image_by_header(&tinyunw_loaded_images_list, (uintptr_t)header);
 }
-#endif
 
 int tinyunw_setimagetracking (bool tracking_flag) {
 #if __x86_64__
@@ -110,9 +109,6 @@ int tinyunw_setimagetracking (bool tracking_flag) {
         /* It is not possible to unregister the dyld callbacks. */
     }
     return TINYUNW_ESUCCESS;
-#else
-    return TINYUNW_EUNSPEC;
-#endif
 }
 
 int tinyunw_getthreadcontext (tinyunw_context_t *context, thread_t thread) {
@@ -281,7 +277,10 @@ const char *tinyunw_register_name (tinyunw_regnum_t regnum) {
 }
 
 
-void tinyunw_search_symbols(struct nlist_64 *symbols, uint32_t nsyms, tinyunw_word_t target, struct nlist_64 **found_symbol) {
+/* These two functions are 100% identical; only the difference in types
+   necessitates this annoying duplication. Since both 32-bit and 64-bit images
+   can coexist, even if not in the same process, it's safest to accept both. */
+static void tinyunw_search_symbols32(struct nlist *symbols, uint32_t nsyms, tinyunw_word_t target, struct nlist **found_symbol) {
     for (uint32_t i = 0; i < nsyms; ++i) {
         /* The symbol must be defined in a section, and must not be a debugging entry. */
         if ((symbols[i].n_type & N_TYPE) != N_SECT || ((symbols[i].n_type & N_STAB) != 0)) {
@@ -300,9 +299,17 @@ void tinyunw_search_symbols(struct nlist_64 *symbols, uint32_t nsyms, tinyunw_wo
     }
 }
 
+/* Code-compressed, but exactly identical to the above function. */
+static void tinyunw_search_symbols64(struct nlist_64 *symbols, uint32_t nsyms, tinyunw_word_t target, struct nlist_64 **found_symbol) {
+    for (uint32_t i = 0; i < nsyms; ++i) {
+        if ((symbols[i].n_type & N_TYPE) != N_SECT || ((symbols[i].n_type & N_STAB) != 0)) continue;
+        if (!*found_symbol && symbols[i].n_value <= target)  *found_symbol = &symbols[i];
+        else if (*found_symbol && symbols[i].n_value <= target && ((*found_symbol)->n_value < symbols[i].n_value)) *found_symbol = &symbols[i];
+    }
+}
+
 int          tinyunw_get_symbol_info(tinyunw_word_t ip, tinyunw_word_t *start_address, const char ** const name)
 {
-#if __x86_64__
     /* If we're not tracking images, we know we have no info. We're not even
        sure whether the IP is valid or not. Treat it as lacking info. */
     if (!tinyunw_tracking_images) {
@@ -326,68 +333,37 @@ int          tinyunw_get_symbol_info(tinyunw_word_t ip, tinyunw_word_t *start_ad
     
     /* Loop through the symbol table, looking for the first symbol that comes
        -after- the given IP. Look at global symbols first, then local symbols. */
-    struct nlist_64 *found_symbol = NULL;
-    struct nlist_64 *global_syms = (struct nlist_64 *)(image->symbolTable.base + image->symbolInformation.firstGlobalSymbol * sizeof(struct nlist_64)),
-                    *local_syms = (struct nlist_64 *)(image->symbolTable.base + image->symbolInformation.firstLocalSymbol * sizeof(struct nlist_64));
-    
-    tinyunw_search_symbols(global_syms, image->symbolInformation.numGlobalSymbols, ip - image->vmaddrSlide, &found_symbol);
-    tinyunw_search_symbols(local_syms, image->symbolInformation.numLocalSymbols, ip - image->vmaddrSlide, &found_symbol);
-    
-    if (found_symbol)
-    {
-        if (start_address) {
-            *start_address = found_symbol->n_value + image->vmaddrSlide;
+    if (image->is64Bit) {
+        struct nlist_64 *found_symbol = NULL;
+        struct nlist_64 *global_syms = (struct nlist_64 *)(image->symbolTable.base + image->symbolInformation.firstGlobalSymbol * sizeof(struct nlist_64)),
+                        *local_syms = (struct nlist_64 *)(image->symbolTable.base + image->symbolInformation.firstLocalSymbol * sizeof(struct nlist_64));
+        
+        tinyunw_search_symbols64(global_syms, image->symbolInformation.numGlobalSymbols, ip - image->vmaddrSlide, &found_symbol);
+        tinyunw_search_symbols64(local_syms, image->symbolInformation.numLocalSymbols, ip - image->vmaddrSlide, &found_symbol);
+        if (found_symbol)
+        {
+            if (start_address)
+                *start_address = found_symbol->n_value + image->vmaddrSlide;
+            if (name)
+                *name = (const char * const)(image->stringTable.base + found_symbol->n_un.n_strx);
+            return TINYUNW_ESUCCESS;
         }
-        if (name) {
-            *name = (const char * const)(image->stringTable.base + found_symbol->n_un.n_strx);
+    } else {
+        struct nlist *found_symbol = NULL;
+        struct nlist *global_syms = (struct nlist *)(image->symbolTable.base + image->symbolInformation.firstGlobalSymbol * sizeof(struct nlist)),
+                     *local_syms = (struct nlist *)(image->symbolTable.base + image->symbolInformation.firstLocalSymbol * sizeof(struct nlist));
+        
+        tinyunw_search_symbols32(global_syms, image->symbolInformation.numGlobalSymbols, ip - image->vmaddrSlide, &found_symbol);
+        tinyunw_search_symbols32(local_syms, image->symbolInformation.numLocalSymbols, ip - image->vmaddrSlide, &found_symbol);
+        if (found_symbol)
+        {
+            if (start_address)
+                *start_address = found_symbol->n_value + image->vmaddrSlide;
+            if (name)
+                *name = (const char * const)(image->stringTable.base + found_symbol->n_un.n_strx);
+            return TINYUNW_ESUCCESS;
         }
-        return TINYUNW_ESUCCESS;
     }
-    
+        
     return TINYUNW_ENOINFO;
-#else
-    return TINYUNW_EUNSPEC;
-#endif
-    
 }
-
-/*
-const char* ImageLoaderMachOCompressed::findClosestSymbol(const void* addr, const void** closestAddr) const
-{
-	uintptr_t targetAddress = (uintptr_t)addr - fSlide;
-	const struct macho_nlist* bestSymbol = NULL;
-	// first walk all global symbols
-	const struct macho_nlist* const globalsStart = &symbolTable[dynSymbolTable->iextdefsym];
-	const struct macho_nlist* const globalsEnd= &globalsStart[dynSymbolTable->nextdefsym];
-	for (const struct macho_nlist* s = globalsStart; s < globalsEnd; ++s) {
- 		if ( (s->n_type & N_TYPE) == N_SECT ) {
-			if ( bestSymbol == NULL ) {
-				if ( s->n_value <= targetAddress )
-					bestSymbol = s;
-			}
-			else if ( (s->n_value <= targetAddress) && (bestSymbol->n_value < s->n_value) ) {
-				bestSymbol = s;
-			}
-		}
-	}
-	// next walk all local symbols
-	const struct macho_nlist* const localsStart = &symbolTable[dynSymbolTable->ilocalsym];
-	const struct macho_nlist* const localsEnd= &localsStart[dynSymbolTable->nlocalsym];
-	for (const struct macho_nlist* s = localsStart; s < localsEnd; ++s) {
- 		if ( ((s->n_type & N_TYPE) == N_SECT) && ((s->n_type & N_STAB) == 0) ) {
-			if ( bestSymbol == NULL ) {
-				if ( s->n_value <= targetAddress )
-					bestSymbol = s;
-			}
-			else if ( (s->n_value <= targetAddress) && (bestSymbol->n_value < s->n_value) ) {
-				bestSymbol = s;
-			}
-		}
-	}
-	if ( bestSymbol != NULL ) {
-		*closestAddr = (void*)(bestSymbol->n_value + fSlide);
-		return &symbolTableStrings[bestSymbol->n_un.n_strx];
-	}
-	return NULL;
-}
-*/
