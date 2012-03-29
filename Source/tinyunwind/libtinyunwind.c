@@ -29,6 +29,7 @@
 
 #import "libtinyunwind_internal.h"
 #import <mach-o/nlist.h>
+#import <dlfcn.h>
 
 #define TINYUNW_FETCH_REAL_CURSOR(param)		\
     tinyunw_real_cursor_t *cursor = (tinyunw_real_cursor_t *)(param)
@@ -36,6 +37,8 @@
 bool tinyunw_tracking_images = false;
 bool tinyunw_dyld_callbacks_installed = false;
 tinyunw_async_list_t tinyunw_loaded_images_list;
+uintptr_t tinyunw_start_symbol_start_address = 0, tinyunw_start_symbol_end_address = 0,
+          tinyunw_thread_start_symbol_start_address = 0, tinyunw_thread_start_symbol_end_address = 0;
 
 int tinyunw_read_unsafe_memory(const void *pointer, void *destination, size_t len) {
     vm_size_t read_size = len;
@@ -92,8 +95,42 @@ static void tinyunw_dyld_remove_image (const struct mach_header *header, intptr_
     tinyunw_async_list_remove_image_by_header(&tinyunw_loaded_images_list, (uintptr_t)header);
 }
 
+static void         tinyunw_lookup_start_symbols(void)
+{
+    uintptr_t startSymbol = (uintptr_t)dlsym(RTLD_DEFAULT, "start"),
+              threadStartSymbol = (uintptr_t)dlsym(RTLD_DEFAULT, "thread_start"),
+              n = 0;
+    Dl_info symInfo;
+    
+    /* This is extremely ridiculous and liable to be horrifyingly inefficient,
+       and there needs to be a better way. */
+    if (startSymbol) {
+        n = startSymbol;
+        /* start() runs only 59 bytes in a normal executable, so limit the search. */
+        while (dladdr((const void *)n, &symInfo) != 0 && (n - startSymbol < 0x200)) {
+            if ((uintptr_t)symInfo.dli_saddr != startSymbol) {
+                tinyunw_start_symbol_start_address = startSymbol;
+                tinyunw_start_symbol_end_address = n - 1;
+                break;
+            }
+            ++n;
+        }
+    }
+    if (threadStartSymbol) {
+        n = threadStartSymbol;
+        /* thread_start(), by itself (not counting pthread_start()) is tiny, only 16 bytes. */
+        while (dladdr((const void *)n, &symInfo) != 0 && (n - threadStartSymbol < 0x100)) {
+            if ((uintptr_t)symInfo.dli_saddr != threadStartSymbol) {
+                tinyunw_thread_start_symbol_start_address = threadStartSymbol;
+                tinyunw_thread_start_symbol_end_address = n - 1;
+                break;
+            }
+            ++n;
+        }
+    }
+}
+
 int tinyunw_setimagetracking (bool tracking_flag) {
-#if __x86_64__
     /* Is tracking requested and we are not already tracking? */
     if (tracking_flag && !tinyunw_tracking_images) {
         tinyunw_tracking_images = true;
@@ -102,6 +139,8 @@ int tinyunw_setimagetracking (bool tracking_flag) {
             tinyunw_async_list_init(&tinyunw_loaded_images_list);
             _dyld_register_func_for_add_image(tinyunw_dyld_add_image);
             _dyld_register_func_for_remove_image(tinyunw_dyld_remove_image);
+            /* There needs to be a better place for this. */
+            tinyunw_lookup_start_symbols();
         }
     /* Is tracking not requested and we are still tracking? */
     } else if (!tracking_flag && tinyunw_tracking_images) {
@@ -164,6 +203,14 @@ int tinyunw_step (tinyunw_cursor_t *fake_cursor, tinyunw_flags_t flags) {
     TINYUNW_FETCH_REAL_CURSOR(fake_cursor);
     
     int result = TINYUNW_ENOFRAME;
+    
+    /* Never attempt to step past start() or thread_start(). */
+    if ((cursor->current_context.__rip >= tinyunw_start_symbol_start_address && cursor->current_context.__rip <= tinyunw_start_symbol_end_address) ||
+        (cursor->current_context.__rip >= tinyunw_thread_start_symbol_start_address && cursor->current_context.__rip <= tinyunw_thread_start_symbol_end_address) ||
+        cursor->current_context.__rip == 0)
+    {
+        return TINYUNW_ENOFRAME;
+    }
     
     /* Try DWARF stepping first. If it returns any error other than no info
        avaiable, return it immediately. DWARF can tell the difference between

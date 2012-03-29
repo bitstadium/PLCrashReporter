@@ -83,6 +83,10 @@ typedef struct tinyunw_real_cursor_t tinyunw_real_cursor_t;
 __private_extern__ bool tinyunw_tracking_images;
 __private_extern__ bool tinyunw_dyld_callbacks_installed;
 __private_extern__ tinyunw_async_list_t tinyunw_loaded_images_list;
+__private_extern__ uintptr_t tinyunw_start_symbol_start_address;
+__private_extern__ uintptr_t tinyunw_start_symbol_end_address;
+__private_extern__ uintptr_t tinyunw_thread_start_symbol_start_address;
+__private_extern__ uintptr_t tinyunw_thread_start_symbol_end_address;
 
 static inline tinyunw_word_t tinyunw_getreg (tinyunw_context_t *context, tinyunw_word_t reg) {
 #if __x86_64__
