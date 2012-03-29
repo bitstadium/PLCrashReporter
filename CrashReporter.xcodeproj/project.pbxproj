@@ -694,7 +694,7 @@
 		059670250EEF6B1A008A0601 /* PLCrashLogWriter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLCrashLogWriter.h; sourceTree = "<group>"; usesTabs = 0; };
 		059670260EEF6B1A008A0601 /* PLCrashLogWriter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLCrashLogWriter.m; sourceTree = "<group>"; usesTabs = 0; };
 		0596702D0EEF6B51008A0601 /* PLCrashLogWriterTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLCrashLogWriterTests.m; sourceTree = "<group>"; usesTabs = 0; };
-		059670C70EEFAC3A008A0601 /* crash_report.proto */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = crash_report.proto; path = Resources/crash_report.proto; sourceTree = "<group>"; };
+		059670C70EEFAC3A008A0601 /* crash_report.proto */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = crash_report.proto; path = Resources/crash_report.proto; sourceTree = "<group>"; usesTabs = 0; };
 		059671140EEFADA6008A0601 /* README.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.txt; sourceTree = "<group>"; };
 		059672F00EF08564008A0601 /* PLCrashAsync.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLCrashAsync.h; sourceTree = "<group>"; usesTabs = 0; };
 		05B447160FE4DA1E00E0506B /* PLCrashFrameWalker_x86_64.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = PLCrashFrameWalker_x86_64.c; sourceTree = "<group>"; usesTabs = 0; };
