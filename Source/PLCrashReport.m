@@ -449,7 +449,20 @@ error:
         return nil;
     }
     
-    return [[[PLCrashReportStackFrameInfo alloc] initWithInstructionPointer: stackFrame->pc] autorelease];
+    /* Symbol name available? */
+    NSString *symbolName = nil;
+    if (stackFrame->symbol != NULL)
+        symbolName = [NSString stringWithUTF8String: stackFrame->symbol];
+    
+    /* Symbol start available? */
+    NSUInteger symbolStart = 0;
+    if (stackFrame->symbol_start != 0)
+        symbolStart = stackFrame->symbol_start;
+    
+    /* Required elements */
+    NSUInteger pc = stackFrame->pc;
+    
+    return [[[PLCrashReportStackFrameInfo alloc] initWithInstructionPointer: pc symbolStart: symbolStart symbolName: symbolName] autorelease];
 }
 
 /**

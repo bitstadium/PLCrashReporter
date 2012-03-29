@@ -109,8 +109,14 @@ enum {
 
     /** CrashReport.thread.frame.pc */
     PLCRASH_PROTO_THREAD_FRAME_PC_ID = 3,
+    
+    /** CrashReport.thread.frame.symbol */
+    PLCRASH_PROTO_THREAD_FRAME_SYMBOL_NAME = 4,
+    
+    /** CrashReport.thread.frame.symbol_start */
+    PLCRASH_PROTO_THREAD_FRAME_SYMBOL_START = 5,
 
-
+    
     /** CrashReport.thread.registers */
     PLCRASH_PROTO_THREAD_REGISTERS_ID = 4,
 
@@ -761,10 +767,18 @@ static size_t plcrash_writer_write_thread_registers (plcrash_async_file_t *file,
  * @param file Output file
  * @param pcval The frame PC value.
  */
-static size_t plcrash_writer_write_thread_frame (plcrash_async_file_t *file, uint64_t pcval) {
+static size_t plcrash_writer_write_thread_frame (plcrash_async_file_t *file, uint64_t pcval, plframe_cursor_t *cursor) {
     size_t rv = 0;
+    plframe_greg_t symstart;
+    const char * symname;
 
     rv += plcrash_writer_pack(file, PLCRASH_PROTO_THREAD_FRAME_PC_ID, PLPROTOBUF_C_TYPE_UINT64, &pcval);
+    
+    if (cursor && plframe_get_symbol(cursor, &symstart, &symname) == PLFRAME_ESUCCESS) {
+        /* If we have a symbol, write its info. */
+        rv += plcrash_writer_pack(file, PLCRASH_PROTO_THREAD_FRAME_SYMBOL_NAME, PLPROTOBUF_C_TYPE_STRING, symname);
+        rv += plcrash_writer_pack(file, PLCRASH_PROTO_THREAD_FRAME_SYMBOL_START, PLPROTOBUF_C_TYPE_UINT64, &symstart);
+    }
 
     return rv;
 }
@@ -832,10 +846,10 @@ static size_t plcrash_writer_write_thread (plcrash_async_file_t *file, thread_t 
             }
 
             /* Determine the size */
-            frame_size = plcrash_writer_write_thread_frame(NULL, pc);
+            frame_size = plcrash_writer_write_thread_frame(NULL, pc, &cursor);
             
             rv += plcrash_writer_pack(file, PLCRASH_PROTO_THREAD_FRAMES_ID, PLPROTOBUF_C_TYPE_MESSAGE, &frame_size);
-            rv += plcrash_writer_write_thread_frame(file, pc);
+            rv += plcrash_writer_write_thread_frame(file, pc, &cursor);
             frame_count++;
         }
 
@@ -926,10 +940,10 @@ static size_t plcrash_writer_write_exception (plcrash_async_file_t *file, plcras
         uint64_t pc = (uint64_t)(uintptr_t) writer->uncaught_exception.callstack[i];
         
         /* Determine the size */
-        uint32_t frame_size = plcrash_writer_write_thread_frame(NULL, pc);
+        uint32_t frame_size = plcrash_writer_write_thread_frame(NULL, pc, NULL);
         
         rv += plcrash_writer_pack(file, PLCRASH_PROTO_EXCEPTION_FRAMES_ID, PLPROTOBUF_C_TYPE_MESSAGE, &frame_size);
-        rv += plcrash_writer_write_thread_frame(file, pc);
+        rv += plcrash_writer_write_thread_frame(file, pc, NULL);
         frame_count++;
     }
 

@@ -57,6 +57,9 @@ typedef struct tinyunw_image {
     /** The binary image's name (may be NULL). */
     char *name;
     
+    /** The binary image's __LINKEDIT segment. */
+    tinyunw_image_piece_t linkeditSegment;
+    
     /** The binary image's __TEXT segment. */
     tinyunw_image_piece_t textSegment;
     
@@ -71,7 +74,29 @@ typedef struct tinyunw_image {
     
     /** The binary image's __unwind_info section. */
     tinyunw_image_piece_t unwindInfoSection;
+
+    /** The binary image's symbol table, if any. */
+    tinyunw_image_piece_t symbolTable;
+    
+    /** The binary image's string table, if any. */
+    tinyunw_image_piece_t stringTable;
+    
+    /** The binary image's dynamic symbol information, if any. */
+    struct {
+        /** Symbol table index for global symbols. */
+        uint32_t firstGlobalSymbol;
+        
+        /** Number of global symbols. */
+        uint32_t numGlobalSymbols;
+        
+        /** Symbol table index for local symbols. */
+        uint32_t firstLocalSymbol;
+        
+        /** Number of local symbols. */
+        uint32_t numLocalSymbols;
+    } symbolInformation;
 } tinyunw_image_t;
+typedef struct tinyunw_image_t tinyunw_image_t;
 
 /**
   * @warning None of these routines are async-signal safe.

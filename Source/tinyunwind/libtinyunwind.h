@@ -238,6 +238,26 @@ extern int tinyunw_get_register (tinyunw_cursor_t *cursor, tinyunw_regnum_t regn
   */
 extern const char *tinyunw_register_name (tinyunw_regnum_t regnum);
 
+/**
+  * Get the name and starting address of a symbol based on an IP value.
+  * @param ip The IP value to use to find the symbol.
+  * @param start_address A pointer in which to place the starting address of the
+  * symbol. It is safe to pass NULL to indicate you do not want this information.
+  * @param name A pointer to a pointer to a character buffer in which the symbol
+  * name is stored. This buffer must be considered read-only; it will typically
+  * point to an area within a Mach-O image (however, that can not be assumed).
+  *
+  * @return Returns TINYUNW_ESUCCESS if the symbol was found and its information
+  * returned. Returns TINYUNW_EINVALIDIP if the IP was not anywhere within any
+  * loaded binary images. Returns TINYUNW_ENOINFO if the IP was valid, but symbol
+  * table information is not available, or if the symbol was not found in the
+  * availble symbol table.
+  *
+  * @note It is not necessary to have a tinyunw_context_t or tinyunw_cursor_t
+  * set up in order to use this function.
+  */
+extern int          tinyunw_get_symbol_info(tinyunw_word_t ip, tinyunw_word_t *start_address, const char ** const name);
+
 #if __cplusplus__
 }
 #endif

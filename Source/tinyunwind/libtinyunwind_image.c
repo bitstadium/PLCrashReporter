@@ -33,6 +33,7 @@
 #import <stdlib.h>
 #import <dlfcn.h>
 #import <libgen.h>
+#import <mach-o/nlist.h>
 
 #ifndef SECT_EHFRAME
 # define SECT_EHFRAME "__eh_frame"
@@ -124,9 +125,43 @@ int tinyunw_image_parse_from_header (tinyunw_image_t *image, uintptr_t header, i
                     }
                     ++section;
                 }
+            } else if (strcmp(segment->segname, SEG_LINKEDIT) == 0) {
+                /* dyld modifies the linkedit segment base VM address by the 
+                   file offset. Comments therein suggest this is unnecessary for
+                   the __TEXT segment because __TEXT is always at the start of
+                   the file. */
+                image->linkeditSegment.base = segment->vmaddr + vmaddr_slide - segment->fileoff;
+                image->linkeditSegment.length = segment->vmsize;
+                image->linkeditSegment.end = image->linkeditSegment.base + image->linkeditSegment.length;
             }
+        } else if (cmd->cmd == LC_SYMTAB) {
+            struct symtab_command *symtab = (struct symtab_command *) cmd;
+            
+            image->symbolTable.base = symtab->symoff;
+            image->symbolTable.length = symtab->nsyms * sizeof(struct nlist_64);
+            image->symbolTable.end = image->symbolTable.base + image->symbolTable.length;
+            
+            image->stringTable.base = symtab->stroff;
+            image->stringTable.length = symtab->strsize;
+            image->stringTable.end = image->stringTable.base + image->stringTable.length;
+        } else if (cmd->cmd == LC_DYSYMTAB) {
+            struct dysymtab_command *dysymtab = (struct dysymtab_command *) cmd;
+            
+            image->symbolInformation.firstGlobalSymbol = dysymtab->iextdefsym;
+            image->symbolInformation.numGlobalSymbols = dysymtab->nextdefsym;
+            image->symbolInformation.firstLocalSymbol = dysymtab->ilocalsym;
+            image->symbolInformation.numLocalSymbols = dysymtab->nlocalsym;
         }
         cmd = (struct load_command *) ((uint8_t *) cmd + cmd->cmdsize);
+    }
+    
+    /* After all commands are parsed, update the symbol and strings tables as
+       necessary relative to the __LINKEDIT segment. */
+    if (image->linkeditSegment.base != 0 && image->symbolTable.base != 0) {
+        image->symbolTable.base += image->linkeditSegment.base;
+        image->symbolTable.end += image->linkeditSegment.base;
+        image->stringTable.base += image->linkeditSegment.base;
+        image->stringTable.end += image->linkeditSegment.base;
     }
     
     return TINYUNW_ESUCCESS;

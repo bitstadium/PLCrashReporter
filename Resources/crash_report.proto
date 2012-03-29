@@ -143,6 +143,12 @@ message CrashReport {
         message StackFrame {
             /* Instruction pointer */
             required uint64 pc = 3;
+			
+			/* Symbol name if available */
+			optional string symbol = 4;
+			
+			/* Symbol start address if available */
+			optional uint64 symbol_start = 5;
         }
 
         /* Backtrace stack frames */

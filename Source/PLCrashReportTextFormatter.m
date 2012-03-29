@@ -435,21 +435,34 @@ NSInteger binaryImageSort(id binary1, id binary2, void *context);
      * address, and the associated image name */
     uint64_t baseAddress = 0x0;
     uint64_t pcOffset = 0x0;
+    uint64_t symOffset = 0x0;
+    NSString *symName = nil;
     NSString *imageName = @"\?\?\?";
-    
+
     PLCrashReportBinaryImageInfo *imageInfo = [report imageForAddress: frameInfo.instructionPointer];
     if (imageInfo != nil) {
         imageName = [imageInfo.imageName lastPathComponent];
         baseAddress = imageInfo.imageBaseAddress;
         pcOffset = frameInfo.instructionPointer - imageInfo.imageBaseAddress;
     }
+    if (frameInfo.symbolStart != 0) {
+        symOffset = frameInfo.instructionPointer - frameInfo.symbolStart;
+    } else {
+        symOffset = pcOffset;
+    }
     
-    return [NSString stringWithFormat: @"%-4ld%-36s0x%08" PRIx64 " 0x%" PRIx64 " + %" PRId64 "\n", 
+    if (frameInfo.symbolName) {
+        symName = frameInfo.symbolName;
+    } else {
+        symName = [NSString stringWithFormat: @"0x%" PRIx64, baseAddress];
+    }
+    
+    return [NSString stringWithFormat: @"%-4ld%-36s0x%08" PRIx64 " %@ + %" PRId64 "\n", 
             (long) frameIndex,
             [imageName UTF8String],
             frameInfo.instructionPointer, 
-            baseAddress, 
-            pcOffset];
+            symName, 
+            symOffset];
 }
 
 /**

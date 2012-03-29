@@ -77,16 +77,25 @@
 /**
  * Initialize with the provided instruction pointer value.
  */
-- (id) initWithInstructionPointer: (uint64_t) instructionPointer {
+- (id) initWithInstructionPointer: (uint64_t) instructionPointer symbolStart: (uint64_t) symbolStart symbolName: (NSString *) symbolName {
     if ((self = [super init]) == nil)
         return nil;
 
     _instructionPointer = instructionPointer;
+    _symbolStart = symbolStart;
+    _symbolName = [symbolName retain];
 
     return self;
 }
 
+- (void) dealloc {
+    [_symbolName release];
+    [super dealloc];
+}
+
 @synthesize instructionPointer = _instructionPointer;
+@synthesize symbolStart = _symbolStart;
+@synthesize symbolName = _symbolName;
 
 @end
 
