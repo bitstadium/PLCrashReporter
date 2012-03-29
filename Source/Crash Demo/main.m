@@ -30,6 +30,22 @@
 #import "CrashReporter.h"
 #import <pthread.h>
 
+@interface TestObject : NSObject
+
+- (void)aMethod;
+
+@end
+
+@implementation TestObject
+
+- (void)aMethod
+{
+    /* Trigger a crash in Obj-C */
+    [(NSObject *)(((uintptr_t *)NULL)[1]) self];
+}
+
+@end
+
 /* A custom post-crash callback */
 void post_crash_callback (siginfo_t *info, ucontext_t *uap, void *context) {
     // this is not async-safe, but this is a test implementation
@@ -38,9 +54,13 @@ void post_crash_callback (siginfo_t *info, ucontext_t *uap, void *context) {
 
 void thread_stackFrame3 (int crashThreaded) {
     /* Trigger a threaded crash */
-    if (crashThreaded)
+    if (crashThreaded == 1)
     	//printf("%s", (char *)0x123124);
 	    ((char *)NULL)[2] = 0;
+    else if (crashThreaded == 3) {
+        TestObject *obj = [[TestObject alloc] init];
+        [obj aMethod];
+    }
     sleep(2);
 }
 
@@ -49,18 +69,23 @@ void thread_stackFrame2 (int crashThreaded) {
 }
 
 void *thread_stackFrame (void *arg) {
-	thread_stackFrame2(arg ? 1 : 0);
+	thread_stackFrame2((int)(intptr_t)arg);
     return NULL;
 }
 
 void stackFrame2 (int crashThreaded) {
     pthread_t thread;
     
-    pthread_create(&thread, NULL, thread_stackFrame, crashThreaded ? &thread : NULL);
+    pthread_create(&thread, NULL, thread_stackFrame, (void *)(intptr_t)crashThreaded);
     
     /* Trigger a crash */
-    if (!crashThreaded)
+    if (crashThreaded == 0)
 		((char *)NULL)[1] = 0;
+    else if (crashThreaded == 2) {
+        TestObject *obj = [[TestObject alloc] init];
+        [obj aMethod];
+    }
+    
     sleep(2);
 }
 
@@ -100,6 +125,13 @@ static void save_crash_report () {
 #endif
 }
 
+/* argv[1]:
+    0: Crash on main thread.
+    1: Crash on secondary thread.
+    2: Crash Objective-C on main thread.
+    3: Crash Objective-C on seconary thread.
+    *: Don't crash.
+*/
 int main (int argc, char *argv[]) {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     NSError *error = nil;
@@ -121,7 +153,7 @@ int main (int argc, char *argv[]) {
     }
 
     /* Add another stack frame */
-    stackFrame(argc > 1);
+    stackFrame(argc > 1 ? atoi(argv[1]) : 0);
 
     [pool release];
 }
