@@ -63,7 +63,7 @@ void tinyunw_image_free (tinyunw_image_t *image) {
     free(image);
 }
 
-static struct tinyunw_image_piece_t tinyunw_image_make_piece (uintptr_t base, uint64_t len) {
+static tinyunw_image_piece_t tinyunw_image_make_piece (uintptr_t base, uint64_t len) {
     return (tinyunw_image_piece_t){ .base = base, .length = len, .end = base + len };
 }
 
@@ -144,13 +144,13 @@ static int tinyunw_image_parse_from_header64 (tinyunw_image_t *image, uintptr_t 
                 image->textSection = tinyunw_image_make_piece(segment->vmsize + vmaddr_slide - segment->fileoff, segment->vmsize);
                 for (uint32_t j = 0; section != NULL && j < segment->nsects; ++j) {
                     if (strcmp(section->sectname, SECT_TEXT) == 0) {
-                        image->textSection = tinyunw_piece_from_section(section, vmaddr_slide);
+                        image->textSection = tinyunw_image_make_piece(section->addr + vmaddr_slide, section->size);
                     } else if (strcmp(section->sectname, SECT_EHFRAME) == 0) {
-                        image->exceptionFrameSection = tinyunw_piece_from_section(section, vmaddr_slide);
+                        image->exceptionFrameSection = tinyunw_image_make_piece(section->addr + vmaddr_slide, section->size);
                     } else if (strcmp(section->sectname, SECT_UNWINDINFO) == 0) {
-                        image->unwindInfoSection = tinyunw_piece_from_section(section, vmaddr_slide);
+                        image->unwindInfoSection = tinyunw_image_make_piece(section->addr + vmaddr_slide, section->size);
                     } else if (strcmp(section->sectname, SECT_DEBUGFRAME) == 0) {
-                        image->debugFrameSection = tinyunw_piece_from_section(section, vmaddr_slide);
+                        image->debugFrameSection = tinyunw_image_make_piece(section->addr + vmaddr_slide, section->size);
                     }
                     ++section;
                 }
@@ -159,9 +159,9 @@ static int tinyunw_image_parse_from_header64 (tinyunw_image_t *image, uintptr_t 
                 
                 for (uint32_t j = 0; section != NULL && j < segment->nsects; ++j) {
                     if (strcmp(section->sectname, SECT_EHFRAME) == 0) {
-                        image->exceptionFrameSection = tinyunw_piece_from_section(section, vmaddr_slide);
+                        image->exceptionFrameSection = tinyunw_image_make_piece(section->addr + vmaddr_slide, section->size);
                     } else if (strcmp(section->sectname, SECT_DEBUGFRAME) == 0) {
-                        image->debugFrameSection = tinyunw_piece_from_section(section, vmaddr_slide);
+                        image->debugFrameSection = tinyunw_image_make_piece(section->addr + vmaddr_slide, section->size);
                     }
                     ++section;
                 }
