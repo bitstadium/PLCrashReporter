@@ -40,14 +40,13 @@ tinyunw_async_list_t tinyunw_loaded_images_list;
 uintptr_t tinyunw_start_symbol_start_address = 0, tinyunw_start_symbol_end_address = 0,
           tinyunw_thread_start_symbol_start_address = 0, tinyunw_thread_start_symbol_end_address = 0;
 
-int tinyunw_read_unsafe_memory(const void *pointer, void *destination, size_t len) {
+int tinyunw_read_unsafe_memory (const void *pointer, void *destination, size_t len) {
     vm_size_t read_size = len;
     
     return vm_read_overwrite(mach_task_self(), (vm_address_t)pointer, len, (pointer_t)destination, &read_size);
 }
 
-tinyunw_image_t     *tinyunw_get_image_containing_address(uintptr_t address)
-{
+tinyunw_image_t *tinyunw_get_image_containing_address (uintptr_t address) {
 #if defined(__x86_64__)
     /* Optimization: For 64-bit, the entire bottom 4GB of address space is known
        to be invalid on OS X. Immediately return NULL if the address is in that
@@ -95,8 +94,7 @@ static void tinyunw_dyld_remove_image (const struct mach_header *header, intptr_
     tinyunw_async_list_remove_image_by_header(&tinyunw_loaded_images_list, (uintptr_t)header);
 }
 
-static void         tinyunw_lookup_start_symbols(void)
-{
+static void tinyunw_lookup_start_symbols (void) {
     uintptr_t startSymbol = (uintptr_t)dlsym(RTLD_DEFAULT, "start"),
               threadStartSymbol = (uintptr_t)dlsym(RTLD_DEFAULT, "thread_start"),
               n = 0;
@@ -327,7 +325,7 @@ const char *tinyunw_register_name (tinyunw_regnum_t regnum) {
 /* These two functions are 100% identical; only the difference in types
    necessitates this annoying duplication. Since both 32-bit and 64-bit images
    can coexist, even if not in the same process, it's safest to accept both. */
-static void tinyunw_search_symbols32(struct nlist *symbols, uint32_t nsyms, tinyunw_word_t target, struct nlist **found_symbol) {
+static void tinyunw_search_symbols32 (struct nlist *symbols, uint32_t nsyms, tinyunw_word_t target, struct nlist **found_symbol) {
     for (uint32_t i = 0; i < nsyms; ++i) {
         /* The symbol must be defined in a section, and must not be a debugging entry. */
         if ((symbols[i].n_type & N_TYPE) != N_SECT || ((symbols[i].n_type & N_STAB) != 0)) {
@@ -347,7 +345,7 @@ static void tinyunw_search_symbols32(struct nlist *symbols, uint32_t nsyms, tiny
 }
 
 /* Code-compressed, but exactly identical to the above function. */
-static void tinyunw_search_symbols64(struct nlist_64 *symbols, uint32_t nsyms, tinyunw_word_t target, struct nlist_64 **found_symbol) {
+static void tinyunw_search_symbols64 (struct nlist_64 *symbols, uint32_t nsyms, tinyunw_word_t target, struct nlist_64 **found_symbol) {
     for (uint32_t i = 0; i < nsyms; ++i) {
         if ((symbols[i].n_type & N_TYPE) != N_SECT || ((symbols[i].n_type & N_STAB) != 0)) continue;
         if (!*found_symbol && symbols[i].n_value <= target)  *found_symbol = &symbols[i];
@@ -355,8 +353,7 @@ static void tinyunw_search_symbols64(struct nlist_64 *symbols, uint32_t nsyms, t
     }
 }
 
-int          tinyunw_get_symbol_info(tinyunw_word_t ip, tinyunw_word_t *start_address, const char ** const name)
-{
+int tinyunw_get_symbol_info (tinyunw_word_t ip, tinyunw_word_t *start_address, const char ** const name) {
     /* If we're not tracking images, we know we have no info. We're not even
        sure whether the IP is valid or not. Treat it as lacking info. */
     if (!tinyunw_tracking_images) {

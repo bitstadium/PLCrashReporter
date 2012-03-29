@@ -262,7 +262,7 @@ extern const char *tinyunw_register_name (tinyunw_regnum_t regnum);
   * @note It is not necessary to have a tinyunw_context_t or tinyunw_cursor_t
   * set up in order to use this function.
   */
-extern int          tinyunw_get_symbol_info(tinyunw_word_t ip, tinyunw_word_t *start_address, const char ** const name);
+extern int tinyunw_get_symbol_info (tinyunw_word_t ip, tinyunw_word_t *start_address, const char ** const name);
 
 #if __cplusplus__
 }

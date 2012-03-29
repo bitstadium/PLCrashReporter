@@ -51,10 +51,6 @@
 # define SECT_DEBUGFRAME "__debug_frame"
 #endif
 
-static inline tinyunw_image_piece_t tinyunw_piece_from_section(struct section_64 *section, intptr_t vmaddr_slide) {
-    return (tinyunw_image_piece_t){ .base = section->addr + vmaddr_slide, .end = section->addr + vmaddr_slide + section->size, .length = section->size };
-}
-
 tinyunw_image_t *tinyunw_image_alloc (void) {
     return calloc(1, sizeof(tinyunw_image_t));
 }
@@ -67,12 +63,11 @@ void tinyunw_image_free (tinyunw_image_t *image) {
     free(image);
 }
 
-static struct tinyunw_image_piece_t tinyunw_image_make_piece(uintptr_t base, uint64_t len) {
+static struct tinyunw_image_piece_t tinyunw_image_make_piece (uintptr_t base, uint64_t len) {
     return (tinyunw_image_piece_t){ .base = base, .length = len, .end = base + len };
 }
 
-static int  tinyunw_image_parse_from_header32(tinyunw_image_t *image, uintptr_t header, intptr_t vmaddr_slide)
-{
+static int tinyunw_image_parse_from_header32 (tinyunw_image_t *image, uintptr_t header, intptr_t vmaddr_slide) {
     const struct mach_header *header32 = (const struct mach_header *) header;
     struct load_command *cmd;
     
@@ -132,8 +127,7 @@ static int  tinyunw_image_parse_from_header32(tinyunw_image_t *image, uintptr_t 
     return TINYUNW_ESUCCESS;
 }
 
-static int  tinyunw_image_parse_from_header64(tinyunw_image_t *image, uintptr_t header, intptr_t vmaddr_slide)
-{ 
+static int tinyunw_image_parse_from_header64 (tinyunw_image_t *image, uintptr_t header, intptr_t vmaddr_slide) {
     const struct mach_header_64 *header64 = (const struct mach_header_64 *) header;
     struct load_command *cmd;
     
