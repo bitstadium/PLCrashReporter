@@ -81,7 +81,7 @@ static int tinyunw_image_parse_from_header32 (tinyunw_image_t *image, uintptr_t 
             if (strcmp(segment->segname, SEG_TEXT) == 0) {
                 struct section *section = (struct section *) (segment + 1);
                 
-                image->textSection = tinyunw_image_make_piece(segment->vmsize + vmaddr_slide - segment->fileoff, segment->vmsize);
+                image->textSegment = tinyunw_image_make_piece(segment->vmsize + vmaddr_slide - segment->fileoff, segment->vmsize);
                 for (uint32_t j = 0; section != NULL && j < segment->nsects; ++j) {
                     if (strcmp(section->sectname, SECT_TEXT) == 0) {
                         image->textSection = tinyunw_image_make_piece(section->addr + vmaddr_slide, section->size);
