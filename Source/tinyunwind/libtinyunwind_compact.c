@@ -200,16 +200,16 @@ int tinyunw_unwind_update_state_from_info (tinyunw_image_t *image, tinyunw_unwin
             /* If DWARF is called for, pretend we have no info. DWARF will be
                up next anyway. Future optimization: Use the unwind info's FDE
                location hint to avoid a full DWARF info scan. */
-            TINYUNW_DEBUG("Skipping to DWARF unwind for RIP 0x%llx", context->__rip);
+            //TINYUNW_DEBUG("Skipping to DWARF unwind for RIP 0x%llx", context->__rip);
             return TINYUNW_ENOINFO;
         case UNWIND_X86_64_MODE_RBP_FRAME:
-            TINYUNW_DEBUG("Unwinding RBP state for RIP 0x%llx", context->__rip);
+            //TINYUNW_DEBUG("Unwinding RBP state for RIP 0x%llx", context->__rip);
             return tinyunw_unwind_update_state_with_rbp(image, info, context);
         case UNWIND_X86_64_MODE_STACK_IMMD:
-            TINYUNW_DEBUG("Unwinding frameless immediate state for RIP 0x%llx", context->__rip);
+            //TINYUNW_DEBUG("Unwinding frameless immediate state for RIP 0x%llx", context->__rip);
             return tinyunw_unwind_update_state_with_frame(image, info, false, context);
         case UNWIND_X86_64_MODE_STACK_IND:
-            TINYUNW_DEBUG("Unwinding frameless indirect state for RIP 0x%llx", context->__rip);
+            //TINYUNW_DEBUG("Unwinding frameless indirect state for RIP 0x%llx", context->__rip);
             return tinyunw_unwind_update_state_with_frame(image, info, true, context);
     }
     return TINYUNW_EINVAL;
@@ -218,7 +218,7 @@ int tinyunw_unwind_update_state_from_info (tinyunw_image_t *image, tinyunw_unwin
 #define GET_BITS(value, mask) ((value >> __builtin_ctz(mask)) & ((1 << __builtin_popcount(mask)) - 1))
 
 static const tinyunw_regnum_t regmap[0x7] = {
-    [UNWIND_X86_64_REG_NONE] = TINYUNW_SAVED_REGISTER_COUNT, [UNWIND_X86_64_REG_RBX] = TINYUNW_X86_64_RBX, [UNWIND_X86_64_REG_R12] = TINYUNW_X86_64_R12,
+    [UNWIND_X86_64_REG_NONE] = -1, [UNWIND_X86_64_REG_RBX] = TINYUNW_X86_64_RBX, [UNWIND_X86_64_REG_R12] = TINYUNW_X86_64_R12,
     [UNWIND_X86_64_REG_R13] = TINYUNW_X86_64_R13, [UNWIND_X86_64_REG_R14] = TINYUNW_X86_64_R14, [UNWIND_X86_64_REG_R15] = TINYUNW_X86_64_R15,
     TINYUNW_SAVED_REGISTER_COUNT
 };
@@ -228,13 +228,17 @@ int tinyunw_unwind_update_state_with_rbp (tinyunw_image_t *image, tinyunw_unwind
     uint32_t regoffset = GET_BITS(info->encoding, UNWIND_X86_64_RBP_FRAME_OFFSET),
              reglocs = GET_BITS(info->encoding, UNWIND_X86_64_RBP_FRAME_REGISTERS);
     uintptr_t regs = context->__rbp - regoffset * sizeof(tinyunw_word_t);
+    tinyunw_word_t word = 0;
     
     for (int i = 0; i < 5; ++i) {
         if (regmap[reglocs & 0x7] == TINYUNW_SAVED_REGISTER_COUNT) {
             TINYUNW_DEBUG("Bad compact encoding register number 0x%x for RIP 0x%llx", reglocs & 0x7, context->__rip);
             return TINYUNW_EINVAL;
+        } else if (regmap[reglocs & 0x07] == -1) {
+            continue;
         }
-        tinyunw_setreg(context, regmap[reglocs & 0x7], *(tinyunw_word_t *)regs);
+        if (tinyunw_read_unsafe_memory((void *)regs, &word, sizeof(tinyunw_word_t)) == TINYUNW_ESUCCESS)
+            tinyunw_setreg(context, regmap[reglocs & 0x7], word);
         regs += sizeof(tinyunw_word_t);
         reglocs >>= 3;
     }
@@ -242,9 +246,9 @@ int tinyunw_unwind_update_state_with_rbp (tinyunw_image_t *image, tinyunw_unwind
     /* Update context as for a standard frame pointer. */
     uint64_t rbp = context->__rbp;
     
-    context->__rbp = *(uint64_t *)rbp; /* next frame pointer */
+    tinyunw_read_unsafe_memory((void *)rbp, &(context->__rbp), sizeof(uint64_t)); /* next frame pointer */
     context->__rsp = rbp + sizeof(uint64_t) * 2; /* sp = bp + saved bp + ret addr */
-    context->__rip = *(uint64_t *)(rbp + sizeof(uint64_t)); /* ip = ret addr */
+    tinyunw_read_unsafe_memory((void *)(rbp + sizeof(uint64_t)), &(context->__rip), sizeof(uint64_t)); /* ip = ret addr */
     return TINYUNW_ESUCCESS;
 }
 
@@ -266,6 +270,7 @@ int tinyunw_unwind_update_state_with_frame (tinyunw_image_t *image, tinyunw_unwi
     int permregs[6] = {0};
     bool rused[7] = {false};
     uintptr_t savedregs = context->__rsp + stacksize - sizeof(tinyunw_word_t) * (nregs + 1);
+    tinyunw_word_t word = 0;
     
     switch (nregs) {
         #define UNPERMUTE(n, factor)    do { permregs[n] = perm / factor; perm -= permregs[n] * factor; } while (0)
@@ -287,7 +292,8 @@ int tinyunw_unwind_update_state_with_frame (tinyunw_image_t *image, tinyunw_unwi
                         TINYUNW_DEBUG("Bad compact encoding register number 0x%x for RIP 0x%llx", regmap[j], context->__rip);
                         return TINYUNW_EINVAL;
                     }
-                    tinyunw_setreg(context, regmap[j], *(tinyunw_word_t *)savedregs);
+                    if (tinyunw_read_unsafe_memory((void *)savedregs, &word, sizeof(tinyunw_word_t)) == TINYUNW_ESUCCESS)
+                        tinyunw_setreg(context, regmap[j], word);
                     savedregs += sizeof(tinyunw_word_t);
                     break;
                 }
@@ -296,7 +302,7 @@ int tinyunw_unwind_update_state_with_frame (tinyunw_image_t *image, tinyunw_unwi
     }
     /* Restore IP and SP. */
     context->__rsp = savedregs + sizeof(tinyunw_word_t);
-    context->__rip = *(uint64_t *)savedregs;
+    tinyunw_read_unsafe_memory((void *)savedregs, &(context->__rip), sizeof(uint64_t));
     return TINYUNW_ESUCCESS;
 }
 
