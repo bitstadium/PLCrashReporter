@@ -95,14 +95,16 @@ static void tinyunw_dyld_remove_image (const struct mach_header *header, intptr_
 }
 
 static void tinyunw_lookup_start_symbols (void) {
-    uintptr_t startSymbol = (uintptr_t)dlsym(RTLD_DEFAULT, "start"),
+    /* dylsm() can't look up the "start" symbol, so fake it using our own symbol
+       search. */
+    uintptr_t startSymbol = 0,
               threadStartSymbol = (uintptr_t)dlsym(RTLD_DEFAULT, "thread_start"),
               n = 0;
     Dl_info symInfo;
     
     /* This is extremely ridiculous and liable to be horrifyingly inefficient,
        and there needs to be a better way. */
-    if (startSymbol) {
+    if (tinyunw_lookup_symbol("start", (void *)&startSymbol) == TINYUNW_ESUCCESS) {
         n = startSymbol;
         /* start() runs only 59 bytes in a normal executable, so limit the search. */
         while (dladdr((const void *)n, &symInfo) != 0 && (n - startSymbol < 0x200)) {
@@ -351,6 +353,86 @@ static void tinyunw_search_symbols64 (struct nlist_64 *symbols, uint32_t nsyms, 
         if (!*found_symbol && symbols[i].n_value <= target)  *found_symbol = &symbols[i];
         else if (*found_symbol && symbols[i].n_value <= target && ((*found_symbol)->n_value < symbols[i].n_value)) *found_symbol = &symbols[i];
     }
+}
+
+/* Same idea as before. */
+static struct nlist *tinyunw_search_symbol_names32 (struct nlist *symbols, uint32_t nsyms, uintptr_t strings, const char * const name) {
+    for (uint32_t i = 0; i < nsyms; ++i) {
+        /* The symbol must be defined in a section, and must not be a debugging entry. */
+        if ((symbols[i].n_type & N_TYPE) != N_SECT || ((symbols[i].n_type & N_STAB) != 0)) {
+            continue;
+        }
+        if (strcmp((const char * const)(strings + symbols[i].n_un.n_strx), name) == 0) {
+            return &symbols[i];
+        }
+    }
+    return NULL;
+}
+
+/* 64-bit version of above */
+static struct nlist_64 *tinyunw_search_symbol_names64 (struct nlist_64 *symbols, uint32_t nsyms, uintptr_t strings, const char * const name) {
+    for (uint32_t i = 0; i < nsyms; ++i) {
+        if ((symbols[i].n_type & N_TYPE) != N_SECT || ((symbols[i].n_type & N_STAB) != 0)) continue;
+        if (strcmp((const char * const)(strings + symbols[i].n_un.n_strx), name) == 0) return &symbols[i];
+    }
+    return NULL;
+}
+
+int tinyunw_lookup_symbol (const char * const name, tinyunw_word_t *start_address) {
+    /* If we're not tracking images, we know we have no info. We're not even
+       sure whether the IP is valid or not. Treat it as lacking info. */
+    if (!tinyunw_tracking_images) {
+        return TINYUNW_ENOINFO;
+    }
+    
+    tinyunw_async_list_entry_t *entry = NULL;
+    tinyunw_image_t *image = NULL;
+    
+    tinyunw_async_list_setreading(&tinyunw_loaded_images_list, true);
+    while ((entry = tinyunw_async_list_next(&tinyunw_loaded_images_list, entry)) != NULL) {
+        image = entry->data;
+        
+        /* If the image doesn't have a symbol table, we can't check it. We treat not
+           having a string table identically, since a 64-bit image should always
+           have both. We also need the dynamic symbol table information. */
+        if (image->symbolTable.base == 0 || image->stringTable.base == 0 ||
+            (image->symbolInformation.numGlobalSymbols == 0 && image->symbolInformation.numLocalSymbols == 0)) {
+            tinyunw_async_list_setreading(&tinyunw_loaded_images_list, false);
+            return TINYUNW_ENOINFO;
+        }
+
+        /* Loop through the symbol table, looking for the first symbol that matches
+           the given name. Look at global symbols first, then local symbols. */
+        if (image->is64Bit) {
+            struct nlist_64 *found_symbol = NULL;
+            struct nlist_64 *global_syms = (struct nlist_64 *)(image->symbolTable.base + image->symbolInformation.firstGlobalSymbol * sizeof(struct nlist_64)),
+                            *local_syms = (struct nlist_64 *)(image->symbolTable.base + image->symbolInformation.firstLocalSymbol * sizeof(struct nlist_64));
+            
+            if ((found_symbol = tinyunw_search_symbol_names64(global_syms, image->symbolInformation.numGlobalSymbols, image->stringTable.base, name)) == NULL)
+                found_symbol = tinyunw_search_symbol_names64(local_syms, image->symbolInformation.numLocalSymbols, image->stringTable.base, name);
+            if (found_symbol) {
+                if (start_address)
+                    *start_address = found_symbol->n_value + image->vmaddrSlide;
+                tinyunw_async_list_setreading(&tinyunw_loaded_images_list, false);
+                return TINYUNW_ESUCCESS;
+            }
+        } else {
+            struct nlist *found_symbol = NULL;
+            struct nlist *global_syms = (struct nlist *)(image->symbolTable.base + image->symbolInformation.firstGlobalSymbol * sizeof(struct nlist)),
+                         *local_syms = (struct nlist *)(image->symbolTable.base + image->symbolInformation.firstLocalSymbol * sizeof(struct nlist));
+            
+            if ((found_symbol = tinyunw_search_symbol_names32(global_syms, image->symbolInformation.numGlobalSymbols, image->stringTable.base, name)) == NULL)
+                found_symbol = tinyunw_search_symbol_names32(local_syms, image->symbolInformation.numLocalSymbols, image->stringTable.base, name);
+            if (found_symbol) {
+                if (start_address)
+                    *start_address = found_symbol->n_value + image->vmaddrSlide;
+                tinyunw_async_list_setreading(&tinyunw_loaded_images_list, false);
+                return TINYUNW_ESUCCESS;
+            }
+        }
+    }
+    tinyunw_async_list_setreading(&tinyunw_loaded_images_list, false);
+    return TINYUNW_ENOINFO;
 }
 
 int tinyunw_get_symbol_info (tinyunw_word_t ip, tinyunw_word_t *start_address, const char ** const name) {

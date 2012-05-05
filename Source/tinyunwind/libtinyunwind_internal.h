@@ -139,3 +139,9 @@ int tinyunw_try_step_stackscan (tinyunw_real_cursor_t *cursor);
  * Return the image containing the given address, if any.
  */
 tinyunw_image_t *tinyunw_get_image_containing_address (uintptr_t address);
+
+/**
+ * @internal
+ * Look up a symbol by name in all loaded images. A poor man's dlsym().
+ */
+int tinyunw_lookup_symbol (const char * const name, tinyunw_word_t *start_address);
