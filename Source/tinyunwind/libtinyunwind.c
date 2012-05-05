@@ -212,19 +212,19 @@ int tinyunw_step (tinyunw_cursor_t *fake_cursor, tinyunw_flags_t flags) {
         return TINYUNW_ENOFRAME;
     }
     
-    /* Try DWARF stepping first. If it returns any error other than no info
-       avaiable, return it immediately. DWARF can tell the difference between
-       having no info to read and seeing a hard end of the call chain. */
-    if (!(flags & TINYUNW_FLAG_NO_DWARF)) {
-        result = tinyunw_try_step_dwarf(cursor);
+    /* Try compact unwinding info first. Same semantics as DWARF. */
+    if (!(flags & TINYUNW_FLAG_NO_COMPACT)) {
+        result = tinyunw_try_step_unwind(cursor);
         if (result == TINYUNW_ESUCCESS || (result != TINYUNW_ESUCCESS && result != TINYUNW_ENOINFO)) {
             return result;
         }
     }
     
-    /* Next, try compact unwinding info. Same semantics as DWARF. */
-    if (!(flags & TINYUNW_FLAG_NO_COMPACT)) {
-        result = tinyunw_try_step_unwind(cursor);
+    /* Next, try DWARF stepping. If it returns any error other than no info
+       avaiable, return it immediately. DWARF can (usually) tell the difference
+       between having no info to read and seeing a hard end of the call chain. */
+    if (!(flags & TINYUNW_FLAG_NO_DWARF)) {
+        result = tinyunw_try_step_dwarf(cursor);
         if (result == TINYUNW_ESUCCESS || (result != TINYUNW_ESUCCESS && result != TINYUNW_ENOINFO)) {
             return result;
         }
