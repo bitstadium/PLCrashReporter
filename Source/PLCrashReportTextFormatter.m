@@ -443,6 +443,26 @@ NSInteger binaryImageSort(id binary1, id binary2, void *context);
         baseAddress = imageInfo.imageBaseAddress;
         pcOffset = frameInfo.instructionPointer - imageInfo.imageBaseAddress;
     }
+    
+    /* Make sure UTF8/16 characters are handled correctly */
+    NSInteger offset = 0;
+    NSInteger index = 0;
+    for (index = 0; index < [imageName length]; index++) {
+        NSRange range = [imageName rangeOfComposedCharacterSequenceAtIndex:index];
+        if (range.length > 1) {
+            offset += range.length - 1;
+            index += range.length - 1;
+        }
+        if (index > 32) {
+            imageName = [NSString stringWithFormat:@"%@...", [imageName substringToIndex:index - 1]];
+            index += 3;
+            break;
+        }
+    }
+    if (index-offset < 36) {
+        imageName = [imageName stringByPaddingToLength:36+offset withString:@" " startingAtIndex:0];
+    }
+    
     if (frameInfo.symbolStart != 0) {
         symOffset = frameInfo.instructionPointer - frameInfo.symbolStart;
     } else {
@@ -455,9 +475,9 @@ NSInteger binaryImageSort(id binary1, id binary2, void *context);
         symName = [NSString stringWithFormat: @"0x%" PRIx64, baseAddress];
     }
     
-    return [NSString stringWithFormat: @"%-4ld%-36s0x%08" PRIx64 " %@ + %" PRId64 "\n", 
+    return [NSString stringWithFormat: @"%-4ld%@0x%08" PRIx64 " %@ + %" PRId64 "\n",
             (long) frameIndex,
-            [imageName UTF8String],
+            imageName,
             frameInfo.instructionPointer, 
             symName, 
             symOffset];
