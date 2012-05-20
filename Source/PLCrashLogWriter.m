@@ -767,19 +767,25 @@ static size_t plcrash_writer_write_thread_registers (plcrash_async_file_t *file,
  * @param file Output file
  * @param pcval The frame PC value.
  */
-static size_t plcrash_writer_write_thread_frame (plcrash_async_file_t *file, uint64_t pcval, plframe_cursor_t *cursor) {
+static size_t plcrash_writer_write_thread_frame (plcrash_async_file_t *file, uint64_t pcval) {
     size_t rv = 0;
     plframe_greg_t symstart;
     uint64_t savesym;
     const char * symname;
+    plframe_error_t err;
 
     rv += plcrash_writer_pack(file, PLCRASH_PROTO_THREAD_FRAME_PC_ID, PLPROTOBUF_C_TYPE_UINT64, &pcval);
     
-    if (cursor && plframe_get_symbol(cursor, &symstart, &symname) == PLFRAME_ESUCCESS) {
+    if ((err = plframe_get_symbol(pcval, &symstart, &symname)) == PLFRAME_ESUCCESS) {
         /* If we have a symbol, write its info. */
         savesym = symstart;
         rv += plcrash_writer_pack(file, PLCRASH_PROTO_THREAD_FRAME_SYMBOL_NAME, PLPROTOBUF_C_TYPE_STRING, symname);
         rv += plcrash_writer_pack(file, PLCRASH_PROTO_THREAD_FRAME_SYMBOL_START, PLPROTOBUF_C_TYPE_UINT64, &savesym);
+#if defined(__x86_64__)
+      PLCF_DEBUG("%llu %llu %s", pcval, symstart, symname);
+#endif
+    } else {
+      PLCF_DEBUG("Couldn't get symbol for %llu got error: %s", pcval, plframe_strerror(err));
     }
 
     return rv;
@@ -848,10 +854,10 @@ static size_t plcrash_writer_write_thread (plcrash_async_file_t *file, thread_t 
             }
 
             /* Determine the size */
-            frame_size = plcrash_writer_write_thread_frame(NULL, pc, &cursor);
+            frame_size = plcrash_writer_write_thread_frame(NULL, pc);
             
             rv += plcrash_writer_pack(file, PLCRASH_PROTO_THREAD_FRAMES_ID, PLPROTOBUF_C_TYPE_MESSAGE, &frame_size);
-            rv += plcrash_writer_write_thread_frame(file, pc, &cursor);
+            rv += plcrash_writer_write_thread_frame(file, pc);
             frame_count++;
         }
 
@@ -942,10 +948,10 @@ static size_t plcrash_writer_write_exception (plcrash_async_file_t *file, plcras
         uint64_t pc = (uint64_t)(uintptr_t) writer->uncaught_exception.callstack[i];
         
         /* Determine the size */
-        uint32_t frame_size = plcrash_writer_write_thread_frame(NULL, pc, NULL);
+        uint32_t frame_size = plcrash_writer_write_thread_frame(NULL, pc);
         
         rv += plcrash_writer_pack(file, PLCRASH_PROTO_EXCEPTION_FRAMES_ID, PLPROTOBUF_C_TYPE_MESSAGE, &frame_size);
-        rv += plcrash_writer_write_thread_frame(file, pc, NULL);
+        rv += plcrash_writer_write_thread_frame(file, pc);
         frame_count++;
     }
 

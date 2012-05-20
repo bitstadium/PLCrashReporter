@@ -136,12 +136,7 @@ void plframe_test_thread_stop (plframe_test_thead_t *args) {
 }
 
 // PLFrameWalker API
-plframe_error_t plframe_get_symbol (plframe_cursor_t *cursor, plframe_greg_t *symstart, const char ** const symname)
+plframe_error_t plframe_get_symbol (plframe_greg_t ip, plframe_greg_t *symstart, const char ** const symname)
 {
-	plframe_greg_t ip = 0;
-    plframe_error_t err = PLFRAME_ESUCCESS;
-
-    if ((err = plframe_get_reg(cursor, PLFRAME_REG_IP, &ip)) != PLFRAME_ESUCCESS)
-        return err;
     return plframe_error_from_tinyunwerror(tinyunw_get_symbol_info(ip, (tinyunw_word_t *)symstart, symname));
 }

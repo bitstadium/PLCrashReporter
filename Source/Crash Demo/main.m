@@ -90,7 +90,11 @@ void stackFrame2 (int crashThreaded) {
 }
 
 void stackFrame (int crashThreaded) {
-	stackFrame2(crashThreaded);
+    if (crashThreaded == 4) {
+        [NSException raise:NSInvalidArgumentException format:@"Foo must not be nil"];
+    } else {
+        stackFrame2(crashThreaded);
+    }
 }
 
 /* If a crash report exists, make it accessible via iTunes document sharing. This is a no-op on Mac OS X. */
@@ -130,6 +134,7 @@ static void save_crash_report () {
     1: Crash on secondary thread.
     2: Crash Objective-C on main thread.
     3: Crash Objective-C on seconary thread.
+    4: Crash Objective-C NSException
     *: Don't crash.
 */
 int main (int argc, char *argv[]) {
