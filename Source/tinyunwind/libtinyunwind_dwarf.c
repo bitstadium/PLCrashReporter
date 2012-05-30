@@ -465,6 +465,9 @@ int tinyunw_dwarf_search_image (tinyunw_image_t *image, uintptr_t ip, tinyunw_dw
               maxLoc = (isEHFrame ? image->exceptionFrameSection.end : image->debugFrameSection.end);
     int err = 0;
     
+    /* Since the RIP will almost always be a return address, back it up by one
+       to address some oddities in how DWARF FDEs are built. */
+    --ip;
     while (p < maxLoc) {
         bool isCIE;
         

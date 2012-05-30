@@ -49,7 +49,10 @@ int tinyunw_try_step_unwind (tinyunw_real_cursor_t *cursor) {
         return TINYUNW_ENOFRAME;
     }
     
-    tinyunw_image_t *image = tinyunw_get_image_containing_address(cursor->current_context.__rip);
+    /* As in DWARF, back off by one due to the way the compiler emits code on
+       exception throws at the end of functions. */
+    uint64_t rip = cursor->current_context.__rip - 1;
+    tinyunw_image_t *image = tinyunw_get_image_containing_address(rip);
     
     if (!image || image->unwindInfoSection.base == 0) {
         //TINYUNW_DEBUG("No compact unwinding info in %s for RIP 0x%llx", image->name, cursor->current_context.__rip);
@@ -59,7 +62,7 @@ int tinyunw_try_step_unwind (tinyunw_real_cursor_t *cursor) {
     tinyunw_unwind_info_t info;
     int result = 0;
     
-    if ((result = tinyunw_unwind_find_info(image, cursor->current_context.__rip, &info)) != TINYUNW_ESUCCESS) {
+    if ((result = tinyunw_unwind_find_info(image, rip, &info)) != TINYUNW_ESUCCESS) {
         return result;
     }
     

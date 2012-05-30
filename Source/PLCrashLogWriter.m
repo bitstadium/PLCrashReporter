@@ -458,9 +458,18 @@ void plcrash_log_writer_set_exception (plcrash_log_writer_t *writer, NSException
         size_t i = 0;
         for (NSNumber *num in callStackArray) {
             assert(i < count);
-            writer->uncaught_exception.callstack[i] = (void *)(uintptr_t)[num unsignedLongLongValue];
+            
+            uintptr_t pc = [num unsignedLongLongValue];
+            
+            /* When encountering any call stack entry which is not a valid
+               symbol, stop. Exception backtraces tend to contain garbage at the
+               end. Do NOT stop if symbol information was just unavailable. */
+            if (tinyunw_get_symbol_info(pc - 1, NULL, NULL) == TINYUNW_EINVALIDIP)
+                break;
+            writer->uncaught_exception.callstack[i] = (void *)pc;
             i++;
         }
+        writer->uncaught_exception.callstack_count = i;
     }
 
     /* Ensure that any signal handler has a consistent view of the above initialization. */
@@ -776,16 +785,21 @@ static size_t plcrash_writer_write_thread_frame (plcrash_async_file_t *file, uin
 
     rv += plcrash_writer_pack(file, PLCRASH_PROTO_THREAD_FRAME_PC_ID, PLPROTOBUF_C_TYPE_UINT64, &pcval);
     
-    if ((err = plframe_get_symbol(pcval, &symstart, &symname)) == PLFRAME_ESUCCESS) {
+    /* Use IP - 1 to account for the way exception throw instructions are
+       emitted by the compiler. This can not produce a false symbol, as a crash
+       must happen at least one instruction into a legitimate function, and
+       addresses that are not in a legitimate function will never produce a
+       useful symbol in any case. */
+    if ((err = plframe_get_symbol(pcval - 1, &symstart, &symname)) == PLFRAME_ESUCCESS) {
         /* If we have a symbol, write its info. */
         savesym = symstart;
         rv += plcrash_writer_pack(file, PLCRASH_PROTO_THREAD_FRAME_SYMBOL_NAME, PLPROTOBUF_C_TYPE_STRING, symname);
         rv += plcrash_writer_pack(file, PLCRASH_PROTO_THREAD_FRAME_SYMBOL_START, PLPROTOBUF_C_TYPE_UINT64, &savesym);
 #if defined(__x86_64__)
-      PLCF_DEBUG("%llu %llu %s", pcval, symstart, symname);
+      //PLCF_DEBUG("%llX %llX %s", pcval, symstart, symname);
 #endif
     } else {
-      PLCF_DEBUG("Couldn't get symbol for %llu got error: %s", pcval, plframe_strerror(err));
+      PLCF_DEBUG("Couldn't get symbol for %llX got error: %s", pcval, plframe_strerror(err));
     }
 
     return rv;
