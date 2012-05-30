@@ -27,8 +27,23 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
+#if __arm__
+#include <arm/arch.h>
+
+.syntax unified
+#endif
+
     .text
+#if __arm__
+#ifdef _ARM_ARCH_7
+    .thumb
+#endif
+    .align 2
+#endif
     .globl _tinyunw_getcontext
+#if __arm__ && defined(_ARM_ARCH_7)
+    .thumb_func
+#endif
 _tinyunw_getcontext:
 
 #
@@ -64,7 +79,10 @@ _tinyunw_getcontext:
     # skip fs
     # skip gs
     xorl	%eax, %eax # return TINYUNW_ESUCCESS
-#else
-    movl    -6540, %eax # return TINYUNW_EUNSPEC
-#endif
     ret
+#elif __i386__
+    movl    -6540, %eax # return TINYUNW_EUNSPEC
+    ret
+#elif __arm__
+    bx      lr
+#endif

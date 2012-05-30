@@ -54,6 +54,9 @@
 - (void) setUp {
     /* Create a temporary log path */
     _logPath = [[NSTemporaryDirectory() stringByAppendingString: [[NSProcessInfo processInfo] globallyUniqueString]] retain];
+    
+    /* Setup libtinyunwind */
+    tinyunw_setimagetracking(true);
 
     /* Create the test thread */
     plframe_test_thread_spawn(&_thr_args);
