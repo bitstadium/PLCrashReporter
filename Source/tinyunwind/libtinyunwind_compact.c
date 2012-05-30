@@ -45,7 +45,7 @@ static int tinyunw_unwind_update_state_with_frame (tinyunw_image_t *image, tinyu
 int tinyunw_try_step_unwind (tinyunw_real_cursor_t *cursor) {
 #if __x86_64__
     if (cursor->current_context.__rip == 0) {
-        TINYUNW_DEBUG("RIP is null, definitely no frame.");
+        TINYUNW_DEBUGL(TINYUNW_DEBUG_COMPACT, "RIP is null, definitely no frame.");
         return TINYUNW_ENOFRAME;
     }
     
@@ -55,7 +55,7 @@ int tinyunw_try_step_unwind (tinyunw_real_cursor_t *cursor) {
     tinyunw_image_t *image = tinyunw_get_image_containing_address(rip);
     
     if (!image || image->unwindInfoSection.base == 0) {
-        //TINYUNW_DEBUG("No compact unwinding info in %s for RIP 0x%llx", image->name, cursor->current_context.__rip);
+        TINYUNW_DEBUGL(TINYUNW_DEBUG_COMPACT, "No compact unwinding info in %s for RIP 0x%llx", image ? image->name : "(none)", rip);
         return TINYUNW_ENOINFO;
     }
     
@@ -76,7 +76,7 @@ int tinyunw_unwind_find_info (tinyunw_image_t *image, uintptr_t ip, tinyunw_unwi
     struct unwind_info_section_header *header = (struct unwind_info_section_header *)(image->unwindInfoSection.base);
     
     if (header->version != UNWIND_SECTION_VERSION) {
-        TINYUNW_DEBUG("Unknown compact encoding version %u in %s for RIP 0x%lx", header->version, image->name, ip);
+        TINYUNW_DEBUGL(TINYUNW_DEBUG_COMPACT, "Unknown compact encoding version %u in %s for RIP 0x%lx", header->version, image->name, ip);
         return TINYUNW_ENOINFO;
     }
     
@@ -84,7 +84,7 @@ int tinyunw_unwind_find_info (tinyunw_image_t *image, uintptr_t ip, tinyunw_unwi
     struct unwind_info_section_header_index_entry *index_entries =
         (struct unwind_info_section_header_index_entry *)(image->unwindInfoSection.base + header->indexSectionOffset);
     
-    //TINYUNW_DEBUG("Searching for offset %lx in %u entries starting at %p.", foffset, header->indexCount, index_entries);
+    TINYUNW_DEBUGL(TINYUNW_DEBUG_COMPACT, "Searching for offset %lx in %u entries starting at %p.", foffset, header->indexCount, index_entries);
     
     /* Binary search for appropos page. */
     uint32_t low = 0, high = header->indexCount, max = high - 1, mid = 0;
@@ -102,7 +102,7 @@ int tinyunw_unwind_find_info (tinyunw_image_t *image, uintptr_t ip, tinyunw_unwi
         }
     }
     
-    //TINYUNW_DEBUG("Using first level entry at index %u", low);
+    TINYUNW_DEBUGL(TINYUNW_DEBUG_COMPACT, "Using first level entry at index %u", low);
     
     uint32_t firstLevelOffset = index_entries[low].functionOffset, firstLevelNextOffset = index_entries[low + 1].functionOffset, encoding = 0;
     uintptr_t secondLevelAddress = image->unwindInfoSection.base + index_entries[low].secondLevelPagesSectionOffset, fstart = 0, fend = 0;
@@ -113,7 +113,8 @@ int tinyunw_unwind_find_info (tinyunw_image_t *image, uintptr_t ip, tinyunw_unwi
             struct unwind_info_regular_second_level_entry *pageentries =
                 (struct unwind_info_regular_second_level_entry *)(secondLevelAddress + pageheader->entryPageOffset);
             
-            //TINYUNW_DEBUG("Regular second level entry starts at 0x%lx with %u entries at %p", secondLevelAddress, pageheader->entryCount, pageentries);
+            TINYUNW_DEBUGL(TINYUNW_DEBUG_COMPACT, "Regular second level entry starts at 0x%lx with %u entries at %p",
+                           secondLevelAddress, pageheader->entryCount, pageentries);
             low = 0;
             high = pageheader->entryCount;
             while (low < high) {
@@ -135,7 +136,7 @@ int tinyunw_unwind_find_info (tinyunw_image_t *image, uintptr_t ip, tinyunw_unwi
             encoding = pageentries[low].encoding;
             fstart = image->header + pageentries[low].functionOffset;
             if (ip < fstart || ip > fend) {
-                //TINYUNW_DEBUG("RIP 0x%lx not in unwind table.", ip);
+                TINYUNW_DEBUGL(TINYUNW_DEBUG_COMPACT, "RIP 0x%lx not in unwind table.", ip);
                 return TINYUNW_ENOINFO;
             }
             break;
@@ -144,7 +145,8 @@ int tinyunw_unwind_find_info (tinyunw_image_t *image, uintptr_t ip, tinyunw_unwi
             struct unwind_info_compressed_second_level_page_header *pageheader = (struct unwind_info_compressed_second_level_page_header *)secondLevelAddress;
             uint32_t *pageentries = (uint32_t *)(secondLevelAddress + pageheader->entryPageOffset);
             
-            //TINYUNW_DEBUG("Compressed second level entry starts at 0x%lx with %u entries at %p", secondLevelAddress, pageheader->entryCount, pageentries);
+            TINYUNW_DEBUGL(TINYUNW_DEBUG_COMPACT, "Compressed second level entry starts at 0x%lx with %u entries at %p",
+                           secondLevelAddress, pageheader->entryCount, pageentries);
             low = 0;
             high = pageheader->entryCount;
             max = high - 1;
@@ -167,9 +169,9 @@ int tinyunw_unwind_find_info (tinyunw_image_t *image, uintptr_t ip, tinyunw_unwi
             } else {
                 fend = image->header + firstLevelNextOffset;
             }
-            //TINYUNW_DEBUG("Chose second-level entry index %u, from 0x%lx to 0x%lx", low, fstart, fend);
+            TINYUNW_DEBUGL(TINYUNW_DEBUG_COMPACT, "Chose second-level entry index %u, from 0x%lx to 0x%lx", low, fstart, fend);
             if (ip < fstart || ip > fend) {
-                //TINYUNW_DEBUG("RIP 0x%lx not in unwind table.", ip);
+                TINYUNW_DEBUGL(TINYUNW_DEBUG_COMPACT, "RIP 0x%lx not in unwind table.", ip);
                 return TINYUNW_ENOINFO;
             }
             encoding = UNWIND_INFO_COMPRESSED_ENTRY_ENCODING_INDEX(pageentries[low]);
@@ -178,11 +180,11 @@ int tinyunw_unwind_find_info (tinyunw_image_t *image, uintptr_t ip, tinyunw_unwi
             } else {
                 encoding = ((uint32_t *)(secondLevelAddress + pageheader->encodingsPageOffset))[encoding - header->commonEncodingsArrayCount];
             }
-            //TINYUNW_DEBUG("Found encoding 0x%u for second-level entry.", encoding);
+            TINYUNW_DEBUGL(TINYUNW_DEBUG_COMPACT, "Found encoding 0x%u for second-level entry.", encoding);
             break;
         }
         default:
-            TINYUNW_DEBUG("Unrecognized unwind page format.");
+            TINYUNW_DEBUGL(TINYUNW_DEBUG_COMPACT, "Unrecognized unwind page format.");
             return TINYUNW_EINVAL;
     }
     info->encoding = encoding;
@@ -197,22 +199,22 @@ int tinyunw_unwind_update_state_from_info (tinyunw_image_t *image, tinyunw_unwin
             /* We don't support the compatibility mode, and neither does Apple's
                libunwind implementation. Apparently, modern binaries use a zero
                encoding to mean "no unwind info for this function." */
-            //TINYUNW_DEBUG("Can't unwind compatibility encoding at RIP 0x%llx", context->__rip);
+            TINYUNW_DEBUGL(TINYUNW_DEBUG_COMPACT, "Can't unwind compatibility encoding at RIP 0x%llx", context->__rip);
             return TINYUNW_ENOINFO;
         case UNWIND_X86_64_MODE_DWARF:
             /* If DWARF is called for, pretend we have no info. DWARF will be
                up next anyway. Future optimization: Use the unwind info's FDE
                location hint to avoid a full DWARF info scan. */
-            //TINYUNW_DEBUG("Skipping to DWARF unwind for RIP 0x%llx", context->__rip);
+            TINYUNW_DEBUGL(TINYUNW_DEBUG_COMPACT, "Skipping to DWARF unwind for RIP 0x%llx", context->__rip);
             return TINYUNW_ENOINFO;
         case UNWIND_X86_64_MODE_RBP_FRAME:
-            //TINYUNW_DEBUG("Unwinding RBP state for RIP 0x%llx", context->__rip);
+            TINYUNW_DEBUGL(TINYUNW_DEBUG_COMPACT, "Unwinding RBP state for RIP 0x%llx", context->__rip);
             return tinyunw_unwind_update_state_with_rbp(image, info, context);
         case UNWIND_X86_64_MODE_STACK_IMMD:
-            //TINYUNW_DEBUG("Unwinding frameless immediate state for RIP 0x%llx", context->__rip);
+            TINYUNW_DEBUGL(TINYUNW_DEBUG_COMPACT, "Unwinding frameless immediate state for RIP 0x%llx", context->__rip);
             return tinyunw_unwind_update_state_with_frame(image, info, false, context);
         case UNWIND_X86_64_MODE_STACK_IND:
-            //TINYUNW_DEBUG("Unwinding frameless indirect state for RIP 0x%llx", context->__rip);
+            TINYUNW_DEBUGL(TINYUNW_DEBUG_COMPACT, "Unwinding frameless indirect state for RIP 0x%llx", context->__rip);
             return tinyunw_unwind_update_state_with_frame(image, info, true, context);
     }
     return TINYUNW_EINVAL;
@@ -235,7 +237,7 @@ int tinyunw_unwind_update_state_with_rbp (tinyunw_image_t *image, tinyunw_unwind
     
     for (int i = 0; i < 5; ++i) {
         if (regmap[reglocs & 0x7] == TINYUNW_SAVED_REGISTER_COUNT) {
-            TINYUNW_DEBUG("Bad compact encoding register number 0x%x for RIP 0x%llx", reglocs & 0x7, context->__rip);
+            TINYUNW_DEBUGL(TINYUNW_DEBUG_COMPACT, "Bad compact encoding register number 0x%x for RIP 0x%llx", reglocs & 0x7, context->__rip);
             return TINYUNW_EINVAL;
         } else if (regmap[reglocs & 0x07] == -1) {
             continue;
@@ -292,7 +294,7 @@ int tinyunw_unwind_update_state_with_frame (tinyunw_image_t *image, tinyunw_unwi
                 if (num++ == permregs[i]) {
                     rused[j] = true;
                     if (regmap[j] == TINYUNW_SAVED_REGISTER_COUNT) {
-                        TINYUNW_DEBUG("Bad compact encoding register number 0x%x for RIP 0x%llx", regmap[j], context->__rip);
+                        TINYUNW_DEBUGL(TINYUNW_DEBUG_COMPACT, "Bad compact encoding register number 0x%x for RIP 0x%llx", regmap[j], context->__rip);
                         return TINYUNW_EINVAL;
                     }
                     if (tinyunw_read_unsafe_memory((void *)savedregs, &word, sizeof(tinyunw_word_t)) == TINYUNW_ESUCCESS)

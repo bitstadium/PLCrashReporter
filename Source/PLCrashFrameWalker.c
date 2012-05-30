@@ -53,6 +53,8 @@ plframe_error_t plframe_error_from_tinyunwerror(int error) {
             return PLFRAME_ENOTSUP;
         case TINYUNW_ENOFRAME:
             return PLFRAME_ENOFRAME;
+        case TINYUNW_ENOINFO:
+            return PLFRAME_ENOFRAME;
         default:
             return PLFRAME_EUNKNOWN;
     }

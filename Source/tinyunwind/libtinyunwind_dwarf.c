@@ -39,7 +39,7 @@ int tinyunw_try_step_dwarf (tinyunw_real_cursor_t *cursor)
 {
 #if __x86_64__
     if (cursor->current_context.__rip == 0) {
-        //TINYUNW_DEBUG("RIP is null, definitely no frame.");
+        TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "RIP is null, definitely no frame.");
         return TINYUNW_ENOFRAME;
     }
     
@@ -49,7 +49,7 @@ int tinyunw_try_step_dwarf (tinyunw_real_cursor_t *cursor)
        debug info we can read. If not, give up immediately and signal the upstream
        routines to keep trying. */
     if (!image || (!image->debugFrameSection.base && !image->exceptionFrameSection.base)) {
-        //TINYUNW_DEBUG("No DWARF in image %s for RIP 0x%llx", image ? image->name : "", cursor->current_context.__rip);
+        TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "No DWARF in image %s for RIP 0x%llx", image ? image->name : "", cursor->current_context.__rip);
         return TINYUNW_ENOINFO;
     }
     
@@ -59,15 +59,15 @@ int tinyunw_try_step_dwarf (tinyunw_real_cursor_t *cursor)
     if ((result = tinyunw_dwarf_search_image(image, cursor->current_context.__rip, &fde)) != TINYUNW_ESUCCESS) {
         /* No FDE means there's DWARF info for the image, but not this particular
            function. Signal upstream routines to keep trying. */
-        //TINYUNW_DEBUG("No FDE in %s for the function at RIP 0x%llx", image->name, cursor->current_context.__rip);
+        TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "No FDE in %s for the function at RIP 0x%llx", image->name, cursor->current_context.__rip);
         return result;
     }
     
     /*
-    TINYUNW_DEBUG("Found FDE for RIP 0x%llx", cursor->current_context.__rip);
-    TINYUNW_DEBUG("FDE is in image %s", image->name);
-    TINYUNW_DEBUG("FDE is for range 0x%lx - 0x%lx", fde.initialLocation, fde.finalLocation);
-    TINYUNW_DEBUG("FDE starts at 0x%lx", fde.fdeLocation - image->exceptionFrameSection.base);
+    TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "Found FDE for RIP 0x%llx", cursor->current_context.__rip);
+    TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "FDE is in image %s", image->name);
+    TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "FDE is for range 0x%lx - 0x%lx", fde.initialLocation, fde.finalLocation);
+    TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "FDE starts at 0x%lx", fde.fdeLocation - image->exceptionFrameSection.base);
     */
 
     tinyunw_dwarf_cfa_state_t state;
@@ -76,16 +76,16 @@ int tinyunw_try_step_dwarf (tinyunw_real_cursor_t *cursor)
         return result;
     
     /*
-    TINYUNW_DEBUG("Initial register state:");
-    TINYUNW_DEBUG("\tRAX: 0x%016llx RBX: 0x%016llx RCX: 0x%016llx RDX: 0x%016llx",
+    TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "Initial register state:");
+    TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "\tRAX: 0x%016llx RBX: 0x%016llx RCX: 0x%016llx RDX: 0x%016llx",
         cursor->current_context.__rax, cursor->current_context.__rbx, cursor->current_context.__rcx, cursor->current_context.__rdx);
-    TINYUNW_DEBUG("\tRSI: 0x%016llx RDI: 0x%016llx RSP: 0x%016llx RBP: 0x%016llx",
+    TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "\tRSI: 0x%016llx RDI: 0x%016llx RSP: 0x%016llx RBP: 0x%016llx",
         cursor->current_context.__rsi, cursor->current_context.__rdi, cursor->current_context.__rsp, cursor->current_context.__rbp);
-    TINYUNW_DEBUG("\tR8:  0x%016llx R9:  0x%016llx R10: 0x%016llx R11: 0x%016llx",
+    TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "\tR8:  0x%016llx R9:  0x%016llx R10: 0x%016llx R11: 0x%016llx",
         cursor->current_context.__r8, cursor->current_context.__r9, cursor->current_context.__r10, cursor->current_context.__r12);
-    TINYUNW_DEBUG("\tR12: 0x%016llx R13: 0x%016llx R14: 0x%016llx R15: 0x%016llx",
+    TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "\tR12: 0x%016llx R13: 0x%016llx R14: 0x%016llx R15: 0x%016llx",
         cursor->current_context.__r12, cursor->current_context.__r13, cursor->current_context.__r14, cursor->current_context.__r15);
-    TINYUNW_DEBUG("\tRIP: 0x%016llx", cursor->current_context.__rip);
+    TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "\tRIP: 0x%016llx", cursor->current_context.__rip);
     */
     
     if ((result = tinyunw_dwarf_apply_state(&state, &cursor->current_context)) != TINYUNW_ESUCCESS)
@@ -95,23 +95,24 @@ int tinyunw_try_step_dwarf (tinyunw_real_cursor_t *cursor)
        a little more accurate. */
     cursor->last_stack_pointer = cursor->current_context.__rsp;
 
+    
+    TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "Found a frame in %s, range 0x%lx - 0x%lx", image->name, fde.initialLocation, fde.finalLocation);
     /*
-    TINYUNW_DEBUG("Found a frame in %s, range 0x%lx - 0x%lx", image->name, fde.initialLocation, fde.finalLocation);
-    TINYUNW_DEBUG("Generated state:");
-    TINYUNW_DEBUG("\tCFA register: %llu + 0x%llx exp 0x%ld", state.cfaRegister, state.cfaOffset, state.cfaExpression);
+    TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "Generated state:");
+    TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "\tCFA register: %llu + 0x%llx exp 0x%ld", state.cfaRegister, state.cfaOffset, state.cfaExpression);
     for (int i = 0; i < TINYUNW_SAVED_REGISTER_COUNT; ++i) {
-        TINYUNW_DEBUG("\tRegister %d: 0x%llx @ %d", i, state.savedRegisters[i].value, state.savedRegisters[i].saveLocation);
+        TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "\tRegister %d: 0x%llx @ %d", i, state.savedRegisters[i].value, state.savedRegisters[i].saveLocation);
     }
-    TINYUNW_DEBUG("Applied register state:");
-    TINYUNW_DEBUG("\tRAX: 0x%016llx RBX: 0x%016llx RCX: 0x%016llx RDX: 0x%016llx",
+    TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "Applied register state:");
+    TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "\tRAX: 0x%016llx RBX: 0x%016llx RCX: 0x%016llx RDX: 0x%016llx",
         cursor->current_context.__rax, cursor->current_context.__rbx, cursor->current_context.__rcx, cursor->current_context.__rdx);
-    TINYUNW_DEBUG("\tRSI: 0x%016llx RDI: 0x%016llx RSP: 0x%016llx RBP: 0x%016llx",
+    TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "\tRSI: 0x%016llx RDI: 0x%016llx RSP: 0x%016llx RBP: 0x%016llx",
         cursor->current_context.__rsi, cursor->current_context.__rdi, cursor->current_context.__rsp, cursor->current_context.__rbp);
-    TINYUNW_DEBUG("\tR8:  0x%016llx R9:  0x%016llx R10: 0x%016llx R11: 0x%016llx",
+    TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "\tR8:  0x%016llx R9:  0x%016llx R10: 0x%016llx R11: 0x%016llx",
         cursor->current_context.__r8, cursor->current_context.__r9, cursor->current_context.__r10, cursor->current_context.__r12);
-    TINYUNW_DEBUG("\tR12: 0x%016llx R13: 0x%016llx R14: 0x%016llx R15: 0x%016llx",
+    TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "\tR12: 0x%016llx R13: 0x%016llx R14: 0x%016llx R15: 0x%016llx",
         cursor->current_context.__r12, cursor->current_context.__r13, cursor->current_context.__r14, cursor->current_context.__r15);
-    TINYUNW_DEBUG("\tRIP: 0x%016llx", cursor->current_context.__rip);
+    TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "\tRIP: 0x%016llx", cursor->current_context.__rip);
     */
     
     return TINYUNW_ESUCCESS;
@@ -446,6 +447,7 @@ int tinyunw_dwarf_parse_fde (uintptr_t *loc, uintptr_t baseLoc, uintptr_t maxLoc
 
     fde->instructionsStart = *loc;
     fde->fdeEnd = fde->fdeStart + fde->length;
+    //TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "Parsed FDE with loc %lx - %lx (file offset %lx)", fde->initialLocation, fde->finalLocation, fde->fdeStart);
     
     return TINYUNW_ESUCCESS;
 }
@@ -488,7 +490,7 @@ int tinyunw_dwarf_search_image (tinyunw_image_t *image, uintptr_t ip, tinyunw_dw
             
             err = tinyunw_dwarf_parse_fde(&p, loc, maxLoc, isEHFrame, &fde);
             if (err == TINYUNW_ESUCCESS) {
-                //TINYUNW_DEBUG("FDE initial location is 0x%lx", fde.initialLocation);
+                //TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "FDE initial location is 0x%lx", fde.initialLocation);
                 /* Note: FDEs can end on the start address of the next FDE, so
                    do a non-inclusive check. */
                 if (ip >= fde.initialLocation && ip < fde.finalLocation) {
@@ -510,7 +512,7 @@ int tinyunw_dwarf_run_cfa_for_fde (tinyunw_dwarf_fde_t *fde, uintptr_t ip, tinyu
     tinyunw_dwarf_cfa_state_t stateStack[8];
     int nstack = 0, result = 0;
     
-    //TINYUNW_DEBUG("Run CFA program at IP 0x%lx", ip);
+    //TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "Run CFA program at IP 0x%lx", ip);
     memset(stateStack, 0, sizeof(stateStack));
     stateStack[0].cie = &fde->cie;
     result = tinyunw_dwarf_run_cfa_program(&fde->cie, fde->cie.initialInstructionsStart, fde->cie.cieEnd, (uintptr_t)-1, stateStack, 8, &nstack);
@@ -541,7 +543,7 @@ const char *tinyunw_dwarf_opname(tinyunw_word_t opcode) {
   * @internal
   * The results are placed on the top of the stack (stack[nstack]).
   */
-#define TINYUNW_OP_DEBUG(msg, args...) //TINYUNW_DEBUG("%s " msg, tinyunw_dwarf_opname(opcode), ## args)
+#define TINYUNW_OP_DEBUG(msg, args...) //TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "%s " msg, tinyunw_dwarf_opname(opcode), ## args)
 
 int tinyunw_dwarf_run_cfa_program (tinyunw_dwarf_cie_t *cie, uintptr_t instrStart, uintptr_t instrEnd, uintptr_t ipLimit,
                                    tinyunw_dwarf_cfa_state_t *stack, int maxstack, int *nstack)
@@ -549,7 +551,7 @@ int tinyunw_dwarf_run_cfa_program (tinyunw_dwarf_cie_t *cie, uintptr_t instrStar
     uintptr_t ipCurrent = 0;
     tinyunw_dwarf_cfa_state_t initialState = stack[*nstack];
 
-    //TINYUNW_DEBUG("Starting CFA program stored at 0x%lx - 0x%lx, pc range 0x0 - 0x%lx", instrStart, instrEnd, ipLimit);
+    //TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "Starting CFA program stored at 0x%lx - 0x%lx, pc range 0x0 - 0x%lx", instrStart, instrEnd, ipLimit);
     
     while (instrStart < instrEnd && ipCurrent < ipLimit) {
         uint8_t opcode = tinyunw_dwarf_read_u8(&instrStart, instrEnd);
@@ -708,7 +710,7 @@ int tinyunw_dwarf_apply_state(tinyunw_dwarf_cfa_state_t *state, tinyunw_context_
             
             /* Read the value pointed to by the CFA plus an offset. */
             case TINYUNW_REG_CFA:
-                //TINYUNW_DEBUG("Register %lld is CFA (0x%llx) + %lld", i, cfaValue, state->savedRegisters[i].value);
+                //TINYUNW_DEBUGL(TINYUNW_DEBUG_DWARF, "Register %lld is CFA (0x%llx) + %lld", i, cfaValue, state->savedRegisters[i].value);
                 tinyunw_setreg(context, i, tinyunw_dwarf_fetch_word(cfaValue + state->savedRegisters[i].value));
                 break;
             

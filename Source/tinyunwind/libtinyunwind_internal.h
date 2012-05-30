@@ -35,11 +35,27 @@
 #import <stdio.h>
 #import <unistd.h>
 
-#define TINYUNW_DEBUG(msg, args...) {\
+#if DEBUG
+#define TINYUNW_DEBUG(msg, ...) {\
     char output[256];\
-    snprintf(output, sizeof(output), "[tinyunwind] " msg "\n", ## args); \
+    snprintf(output, sizeof(output), "[tinyunwind] " msg "\n", ## __VA_ARGS__); \
     write(STDERR_FILENO, output, strlen(output));\
 }
+#define TINYUNW_DEBUG_STEP          (1 << 0)
+#define TINYUNW_DEBUG_COMPACT       (1 << 1)
+#define TINYUNW_DEBUG_DWARF         (1 << 2)
+#define TINYUNW_DEBUG_FP            (1 << 3)
+#define TINYUNW_DEBUG_SCAN          (1 << 4)
+#define TINYUNW_DEBUG_LEVEL         0/*TINYUNW_DEBUG_STEP | TINYUNW_DEBUG_COMPACT | \
+                                    TINYUNW_DEBUG_DWARF | TINYUNW_DEBUG_FP | \
+                                    TINYUNW_DEBUG_SCAN*/
+#define TINYUNW_DEBUGL(l, msg, ...) { \
+    if ((TINYUNW_DEBUG_LEVEL & l) != 0) TINYUNW_DEBUG(msg, ## __VA_ARGS__);  \
+}
+#else
+#define TINYUNW_DEBUG(msg, ...)
+#define TINYUNW_DEBUGL(l, msg, ...)
+#endif
 
 /**
   * The number of saved registers in DWARF for x86_64. Also the invalid register
