@@ -795,11 +795,8 @@ static size_t plcrash_writer_write_thread_frame (plcrash_async_file_t *file, uin
         savesym = symstart;
         rv += plcrash_writer_pack(file, PLCRASH_PROTO_THREAD_FRAME_SYMBOL_NAME, PLPROTOBUF_C_TYPE_STRING, symname);
         rv += plcrash_writer_pack(file, PLCRASH_PROTO_THREAD_FRAME_SYMBOL_START, PLPROTOBUF_C_TYPE_UINT64, &savesym);
-#if defined(__x86_64__)
-      //PLCF_DEBUG("%llX %llX %s", pcval, symstart, symname);
-#endif
     } else {
-      PLCF_DEBUG("Couldn't get symbol for %llX got error: %s", pcval, plframe_strerror(err));
+        PLCF_DEBUG("Couldn't get symbol for %llX got error: %s", pcval, plframe_strerror(err));
     }
 
     return rv;
