@@ -1,7 +1,7 @@
 /*
  * Author: Landon Fuller <landonf@plausiblelabs.com>
  *
- * Copyright (c) 2008-2009 Plausible Labs Cooperative, Inc.
+ * Copyright (c) 2008-2012 Plausible Labs Cooperative, Inc.
  * All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person
@@ -44,12 +44,14 @@
  */
 - (id) initWithApplicationIdentifier: (NSString *) applicationIdentifier 
                   applicationVersion: (NSString *) applicationVersion
+             applicationShortVersion: (NSString *) applicationShortVersion
 {
     if ((self = [super init]) == nil)
         return nil;
 
     _applicationIdentifier = [applicationIdentifier retain];
     _applicationVersion = [applicationVersion retain];
+    _applicationShortVersion = [applicationShortVersion retain];
 
     return self;
 }
@@ -57,10 +59,12 @@
 - (void) dealloc {
     [_applicationIdentifier release];
     [_applicationVersion release];
+    [_applicationShortVersion release];
     [super dealloc];
 }
 
 @synthesize applicationIdentifier = _applicationIdentifier;
 @synthesize applicationVersion = _applicationVersion;
+@synthesize applicationShortVersion = _applicationShortVersion;
 
 @end

@@ -1,7 +1,7 @@
 /*
  * Author: Landon Fuller <landonf@plausiblelabs.com>
  *
- * Copyright (c) 2008-2009 Plausible Labs Cooperative, Inc.
+ * Copyright (c) 2008-2012 Plausible Labs Cooperative, Inc.
  * All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person
@@ -35,10 +35,14 @@
     
     /** Application version */
     NSString *_applicationVersion;
+  
+  /** Application short version */
+  NSString *_applicationShortVersion;
 }
 
 - (id) initWithApplicationIdentifier: (NSString *) applicationIdentifier 
-                  applicationVersion: (NSString *) applicationVersion;
+                  applicationVersion: (NSString *) applicationVersion
+             applicationShortVersion: (NSString *) applicationShortVersion;
 
 /**
  * The application identifier. This is usually the application's CFBundleIdentifier value.
@@ -49,5 +53,10 @@
  * The application version. This is usually the application's CFBundleVersion value.
  */
 @property(nonatomic, readonly) NSString *applicationVersion;
+
+/**
+ * The application short version. This is usually the application's CFBundleShortVersionString value.
+ */
+@property(nonatomic, readonly) NSString *applicationShortVersion;
 
 @end

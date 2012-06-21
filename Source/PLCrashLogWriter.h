@@ -1,7 +1,7 @@
 /*
  * Author: Landon Fuller <landonf@plausiblelabs.com>
  *
- * Copyright (c) 2008-2010 Plausible Labs Cooperative, Inc.
+ * Copyright (c) 2008-2012 Plausible Labs Cooperative, Inc.
  * All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person
@@ -83,6 +83,9 @@ typedef struct plcrash_log_writer {
 
         /** Application version */
         char *app_version;
+      
+        /** Application version */
+        char *app_short_version;
     } application_info;
     
     /** Process data */
@@ -132,7 +135,7 @@ typedef struct plcrash_log_writer {
 } plcrash_log_writer_t;
 
 
-plcrash_error_t plcrash_log_writer_init (plcrash_log_writer_t *writer, NSString *app_identifier, NSString *app_version);
+plcrash_error_t plcrash_log_writer_init (plcrash_log_writer_t *writer, NSString *app_identifier, NSString *app_version, NSString *app_short_version);
 void plcrash_log_writer_set_exception (plcrash_log_writer_t *writer, NSException *exception);
 
 void plcrash_log_writer_add_image (plcrash_log_writer_t *writer, const void *header_addr);

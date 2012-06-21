@@ -173,7 +173,7 @@ static void uncaught_exception_handler (NSException *exception) {
 @interface PLCrashReporter (PrivateMethods)
 
 - (id) initWithBundle: (NSBundle *) bundle;
-- (id) initWithApplicationIdentifier: (NSString *) applicationIdentifier appVersion: (NSString *) applicationVersion;
+- (id) initWithApplicationIdentifier: (NSString *) applicationIdentifier appVersion: (NSString *) applicationVersion appShortVersion: (NSString *) applicationShortVersion;
 
 - (BOOL) populateCrashReportDirectoryAndReturnError: (NSError **) outError;
 - (NSString *) crashReportDirectory;
@@ -304,7 +304,8 @@ static void uncaught_exception_handler (NSException *exception) {
     signal_handler_context.path = strdup([[self crashReportPath] UTF8String]); // NOTE: would leak if this were not a singleton struct
     assert(_applicationIdentifier != nil);
     assert(_applicationVersion != nil);
-    plcrash_log_writer_init(&signal_handler_context.writer, _applicationIdentifier, _applicationVersion);
+    assert(_applicationShortVersion != nil);
+    plcrash_log_writer_init(&signal_handler_context.writer, _applicationIdentifier, _applicationVersion, _applicationShortVersion);
     
     /* Enable dyld image monitoring */
     _dyld_register_func_for_add_image(image_add_callback);
@@ -370,7 +371,7 @@ static void uncaught_exception_handler (NSException *exception) {
  * This is the designated initializer, but it is not intended
  * to be called externally.
  */
-- (id) initWithApplicationIdentifier: (NSString *) applicationIdentifier appVersion: (NSString *) applicationVersion {
+- (id) initWithApplicationIdentifier: (NSString *) applicationIdentifier appVersion: (NSString *) applicationVersion appShortVersion: (NSString *) applicationShortVersion{
     /* Only allow one instance to be created, no matter what */
     if (sharedReporter != NULL) {
         [self release];
@@ -384,6 +385,7 @@ static void uncaught_exception_handler (NSException *exception) {
     /* Save application ID and version */
     _applicationIdentifier = [applicationIdentifier retain];
     _applicationVersion = [applicationVersion retain];
+    _applicationShortVersion = [applicationShortVersion retain];
     
     /* No occurances of '/' should ever be in a bundle ID, but just to be safe, we escape them */
     NSString *appIdPath = [applicationIdentifier stringByReplacingOccurrencesOfString: @"/" withString: @"_"];
@@ -404,6 +406,7 @@ static void uncaught_exception_handler (NSException *exception) {
 - (id) initWithBundle: (NSBundle *) bundle {
     NSString *bundleIdentifier = [bundle bundleIdentifier];
     NSString *bundleVersion = [[bundle infoDictionary] objectForKey: (NSString *) kCFBundleVersionKey];
+    NSString *bundleShortVersion = [[bundle infoDictionary] objectForKey: @"CFBundleShortVersionString"];
     
     /* Verify that the identifier is available */
     if (bundleIdentifier == nil) {
@@ -424,7 +427,13 @@ static void uncaught_exception_handler (NSException *exception) {
         bundleVersion = @"";
     }
     
-    return [self initWithApplicationIdentifier: bundleIdentifier appVersion: bundleVersion];
+    /* Verify that the short version is available */
+    if (bundleShortVersion == nil) {
+        NSDEBUG(@"Warning -- bundle short version unavailable");
+        bundleShortVersion = @"";
+    }
+    
+    return [self initWithApplicationIdentifier: bundleIdentifier appVersion: bundleVersion appShortVersion: bundleShortVersion];
 }
 
 
@@ -432,6 +441,7 @@ static void uncaught_exception_handler (NSException *exception) {
     [_crashReportDirectory release];
     [_applicationIdentifier release];
     [_applicationVersion release];
+    [_applicationShortVersion release];
     [super dealloc];
 }
 

@@ -1,7 +1,7 @@
 /*
  * Author: Landon Fuller <landonf@plausiblelabs.com>
  *
- * Copyright (c) 2008-2009 Plausible Labs Cooperative, Inc.
+ * Copyright (c) 2008-2012 Plausible Labs Cooperative, Inc.
  * All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person
@@ -103,6 +103,7 @@
 
     STAssertTrue(strcmp(appInfo->identifier, "test.id") == 0, @"Incorrect app ID written");
     STAssertTrue(strcmp(appInfo->version, "1.0") == 0, @"Incorrect app version written");
+    STAssertTrue(strcmp(appInfo->short_version, "1.0") == 0, @"Incorrect app short version written");
 }
 
 

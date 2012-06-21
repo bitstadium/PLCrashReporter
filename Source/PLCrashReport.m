@@ -385,13 +385,21 @@ error:
                                            @"Missing app version in crash report"));
         return nil;
     }
-    
+
+    /* Short Version available? */
+    NSString *shortVersion = @"";
+    if (applicationInfo->short_version != NULL) {
+        shortVersion = [NSString stringWithUTF8String: applicationInfo->short_version];
+    }
+
     /* Done */
     NSString *identifier = [NSString stringWithUTF8String: applicationInfo->identifier];
     NSString *version = [NSString stringWithUTF8String: applicationInfo->version];
+    
 
     return [[[PLCrashReportApplicationInfo alloc] initWithApplicationIdentifier: identifier
-                                                          applicationVersion: version] autorelease];
+                                                          applicationVersion: version
+                                                        applicationShortVersion: shortVersion] autorelease];
 }
 
 
