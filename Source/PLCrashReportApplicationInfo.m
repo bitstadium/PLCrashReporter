@@ -41,6 +41,7 @@
  *
  * @param applicationIdentifier Application identifier. This is usually the CFBundleIdentifier value.
  * @param applicationVersion Application version. This is usually the CFBundleVersion value.
+ * @param applicationShortVersion Application short version. This is usually the CFBundleShortVersionString value.
  */
 - (id) initWithApplicationIdentifier: (NSString *) applicationIdentifier 
                   applicationVersion: (NSString *) applicationVersion
