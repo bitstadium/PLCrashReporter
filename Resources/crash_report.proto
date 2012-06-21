@@ -132,7 +132,7 @@ message CrashReport {
         /* Application version string */
         required string version = 2;
 
-        /* Application version string */
+        /* Application short version string */
         optional string short_version = 3;
     }
     required ApplicationInfo application_info = 2;
