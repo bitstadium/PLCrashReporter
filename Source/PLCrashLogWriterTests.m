@@ -100,10 +100,22 @@
     // Nothing else to do?
     if (appInfo == NULL)
         return;
-
+    
     STAssertTrue(strcmp(appInfo->identifier, "test.id") == 0, @"Incorrect app ID written");
     STAssertTrue(strcmp(appInfo->version, "1.0") == 0, @"Incorrect app version written");
     STAssertTrue(strcmp(appInfo->short_version, "1.0") == 0, @"Incorrect app short version written");
+}
+
+// check a crash report's report info
+- (void) checkReportInfo: (Plcrash__CrashReport *) crashReport {
+    Plcrash__CrashReport__ReportInfo *reportInfo = crashReport->report_info;
+    
+    STAssertNotNULL(reportInfo, @"No report info available");
+    // Nothing else to do?
+    if (reportInfo == NULL)
+        return;
+
+    STAssertNotNULL(reportInfo->report_guid, @"No Crash Report GUID written");
 }
 
 
@@ -204,12 +216,16 @@
         plframe_cursor_thread_init(&cursor, pthread_mach_thread_np(_thr_args.thread), NULL);
     }
 
+    CFUUIDRef theGUID = CFUUIDCreate(NULL);
+	CFStringRef stringGUID = CFUUIDCreateString(NULL, theGUID);
+	CFRelease(theGUID);
+    
     /* Open the output file */
     int fd = open([_logPath UTF8String], O_RDWR|O_CREAT|O_EXCL, 0644);
     plcrash_async_file_init(&file, fd, 0);
 
     /* Initialize a writer */
-    STAssertEquals(PLCRASH_ESUCCESS, plcrash_log_writer_init(&writer, @"test.id", @"1.0"), @"Initialization failed");
+    STAssertEquals(PLCRASH_ESUCCESS, plcrash_log_writer_init(&writer, @"test.id", @"1.0", @"1.0", (NSString *)stringGUID), @"Initialization failed");
 
     /* Set an exception with a valid return address call stack. */
     NSException *e;
@@ -259,6 +275,7 @@
         [self checkSystemInfo: crashReport];
         [self checkThreads: crashReport];
         [self checkException: crashReport];
+        [self checkReportInfo: crashReport];
 
         /* Check the signal info */
         STAssertTrue(strcmp(crashReport->signal->name, "SIGSEGV") == 0, @"Signal incorrect");

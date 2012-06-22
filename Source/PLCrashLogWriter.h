@@ -49,6 +49,12 @@
  * Crash log writer context.
  */
 typedef struct plcrash_log_writer {
+    /** Report data */
+    struct {
+        /** Crash Report GUID */
+        char *report_guid;
+    } report_info;
+  
     /** System data */
     struct {
         /** The host OS version. */
@@ -135,7 +141,7 @@ typedef struct plcrash_log_writer {
 } plcrash_log_writer_t;
 
 
-plcrash_error_t plcrash_log_writer_init (plcrash_log_writer_t *writer, NSString *app_identifier, NSString *app_version, NSString *app_short_version);
+plcrash_error_t plcrash_log_writer_init (plcrash_log_writer_t *writer, NSString *app_identifier, NSString *app_version, NSString *app_short_version, NSString *report_guid);
 void plcrash_log_writer_set_exception (plcrash_log_writer_t *writer, NSException *exception);
 
 void plcrash_log_writer_add_image (plcrash_log_writer_t *writer, const void *header_addr);

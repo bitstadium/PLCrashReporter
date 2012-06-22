@@ -305,7 +305,7 @@ static void uncaught_exception_handler (NSException *exception) {
     assert(_applicationIdentifier != nil);
     assert(_applicationVersion != nil);
     assert(_applicationShortVersion != nil);
-    plcrash_log_writer_init(&signal_handler_context.writer, _applicationIdentifier, _applicationVersion, _applicationShortVersion);
+    plcrash_log_writer_init(&signal_handler_context.writer, _applicationIdentifier, _applicationVersion, _applicationShortVersion, _crashReportGUID);
     
     /* Enable dyld image monitoring */
     _dyld_register_func_for_add_image(image_add_callback);
@@ -387,6 +387,12 @@ static void uncaught_exception_handler (NSException *exception) {
     _applicationVersion = [applicationVersion retain];
     _applicationShortVersion = [applicationShortVersion retain];
     
+    /* Create the Crash Report GUID */
+    CFUUIDRef theGUID = CFUUIDCreate(NULL);
+	CFStringRef stringGUID = CFUUIDCreateString(NULL, theGUID);
+	CFRelease(theGUID);
+    _crashReportGUID = (NSString *)stringGUID;
+
     /* No occurances of '/' should ever be in a bundle ID, but just to be safe, we escape them */
     NSString *appIdPath = [applicationIdentifier stringByReplacingOccurrencesOfString: @"/" withString: @"_"];
     
@@ -442,6 +448,7 @@ static void uncaught_exception_handler (NSException *exception) {
     [_applicationIdentifier release];
     [_applicationVersion release];
     [_applicationShortVersion release];
+    [_crashReportGUID release];
     [super dealloc];
 }
 

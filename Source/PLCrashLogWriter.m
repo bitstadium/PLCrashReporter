@@ -221,6 +221,13 @@ enum {
 
     /** CrashReport.machine_info.logical_processor_count */
     PLCRASH_PROTO_MACHINE_INFO_LOGICAL_PROCESSOR_COUNT_ID = 4,
+    
+    
+    /** CrashReport.report_info */
+    PLCRASH_PROTO_REPORT_INFO_ID = 9,
+    
+    /** CrashReport.report_info.report_guid */
+    PLCRASH_PROTO_REPORT_INFO_REPORT_GUID_ID = 1,
 };
 
 /**
@@ -231,15 +238,21 @@ enum {
  * @param app_identifier Unique per-application identifier. On Mac OS X, this is likely the CFBundleIdentifier.
  * @param app_version Application version string.
  * @param app_short_version Application short version string.
+ * @param report_guid Crash Report GUID string.
  *
  * @note If this function fails, plcrash_log_writer_free() should be called
  * to free any partially allocated data.
  *
  * @warning This function is not guaranteed to be async-safe, and must be called prior to enabling the crash handler.
  */
-plcrash_error_t plcrash_log_writer_init (plcrash_log_writer_t *writer, NSString *app_identifier, NSString *app_version, NSString *app_short_version) {
+plcrash_error_t plcrash_log_writer_init (plcrash_log_writer_t *writer, NSString *app_identifier, NSString *app_version, NSString *app_short_version, NSString *report_guid) {
     /* Default to 0 */
     memset(writer, 0, sizeof(*writer));
+    
+    /* Fetch the crash report information */
+    {
+        writer->report_info.report_guid = strdup([report_guid UTF8String]);
+    }
     
     /* Fetch the application information */
     {
@@ -496,6 +509,10 @@ plcrash_error_t plcrash_log_writer_close (plcrash_log_writer_t *writer) {
  * @warning This method is not async safe.
  */
 void plcrash_log_writer_free (plcrash_log_writer_t *writer) {
+    /* Free the report info */
+    if (writer->report_info.report_guid != NULL)
+        free(writer->report_info.report_guid);
+    
     /* Free the app info */
     if (writer->application_info.app_identifier != NULL)
         free(writer->application_info.app_identifier);
@@ -537,6 +554,23 @@ void plcrash_log_writer_free (plcrash_log_writer_t *writer) {
         if (writer->uncaught_exception.callstack != NULL)
             free(writer->uncaught_exception.callstack);
     }
+}
+
+/**
+ * @internal
+ *
+ * Write the report info message.
+ *
+ * @param file Output file
+ * @param report_guid Crash Report GUID
+ */
+static size_t plcrash_writer_write_report_info (plcrash_async_file_t *file, const char *report_guid) {
+    size_t rv = 0;
+    
+    /* Report GUID */
+    rv += plcrash_writer_pack(file, PLCRASH_PROTO_REPORT_INFO_REPORT_GUID_ID, PLPROTOBUF_C_TYPE_STRING, report_guid);
+    
+    return rv;
 }
 
 /**
@@ -1045,6 +1079,18 @@ plcrash_error_t plcrash_log_writer_write (plcrash_log_writer_t *writer, plcrash_
         plcrash_async_file_write(file, &version, sizeof(version));
     }
 
+    /* Report Info */
+    {
+        uint32_t size;
+        
+        /* Determine size */
+        size = plcrash_writer_write_report_info(NULL, writer->report_info.report_guid);
+        
+        /* Write message */
+        plcrash_writer_pack(file, PLCRASH_PROTO_REPORT_INFO_ID, PLPROTOBUF_C_TYPE_MESSAGE, &size);
+        plcrash_writer_write_report_info(file, writer->report_info.report_guid);
+    }
+    
     /* System Info */
     {
         time_t timestamp;
