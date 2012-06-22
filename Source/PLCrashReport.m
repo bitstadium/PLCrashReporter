@@ -432,7 +432,7 @@ error:
     }
 
     /* Short Version available? */
-    NSString *shortVersion = @"";
+    NSString *shortVersion = nil;
     if (applicationInfo->short_version != NULL) {
         shortVersion = [NSString stringWithUTF8String: applicationInfo->short_version];
     }
