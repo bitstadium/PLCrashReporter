@@ -36,13 +36,17 @@
     /** Application version */
     NSString *_applicationVersion;
   
-  /** Application short version */
-  NSString *_applicationShortVersion;
+    /** Application short version */
+    NSString *_applicationShortVersion;
+  
+    /** Application startup timestamp */
+    NSDate *_applicationStartupTimestamp;
 }
 
 - (id) initWithApplicationIdentifier: (NSString *) applicationIdentifier 
                   applicationVersion: (NSString *) applicationVersion
-             applicationShortVersion: (NSString *) applicationShortVersion;
+             applicationShortVersion: (NSString *) applicationShortVersion
+         applicationStartupTimestamp: (NSDate *) applicationStartupTimestamp;
 
 /**
  * The application identifier. This is usually the application's CFBundleIdentifier value.
@@ -58,5 +62,10 @@
  * The application short version. This is usually the application's CFBundleShortVersionString value.
  */
 @property(nonatomic, readonly) NSString *applicationShortVersion;
+
+/**
+ * The application startup timestamp. This is set when initializing the crash reporter.
+ */
+@property(nonatomic, readonly) NSDate *applicationStartupTimestamp;
 
 @end

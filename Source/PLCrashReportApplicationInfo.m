@@ -42,10 +42,12 @@
  * @param applicationIdentifier Application identifier. This is usually the CFBundleIdentifier value.
  * @param applicationVersion Application version. This is usually the CFBundleVersion value.
  * @param applicationShortVersion Application short version. This is usually the CFBundleShortVersionString value.
+ * @param applicationStartupTimestamp Application startup timestamp. This is set when initializing the crash reporter.
  */
 - (id) initWithApplicationIdentifier: (NSString *) applicationIdentifier 
                   applicationVersion: (NSString *) applicationVersion
              applicationShortVersion: (NSString *) applicationShortVersion
+         applicationStartupTimestamp: (NSDate *) applicationStartupTimestamp
 {
     if ((self = [super init]) == nil)
         return nil;
@@ -53,6 +55,7 @@
     _applicationIdentifier = [applicationIdentifier retain];
     _applicationVersion = [applicationVersion retain];
     _applicationShortVersion = [applicationShortVersion retain];
+    _applicationStartupTimestamp = [applicationStartupTimestamp retain];
 
     return self;
 }
@@ -61,11 +64,13 @@
     [_applicationIdentifier release];
     [_applicationVersion release];
     [_applicationShortVersion release];
+    [_applicationStartupTimestamp release];
     [super dealloc];
 }
 
 @synthesize applicationIdentifier = _applicationIdentifier;
 @synthesize applicationVersion = _applicationVersion;
 @synthesize applicationShortVersion = _applicationShortVersion;
+@synthesize applicationStartupTimestamp = _applicationStartupTimestamp;
 
 @end

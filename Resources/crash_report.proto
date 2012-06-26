@@ -134,6 +134,10 @@ message CrashReport {
 
         /* Application short version string */
         optional string short_version = 3;
+
+        /* Application startup timestamp  (as seconds since epoch). 0 if the time
+         * is unknown or can not be determined. */
+        optional int64 startup_timestamp = 4;
     }
     required ApplicationInfo application_info = 2;
 

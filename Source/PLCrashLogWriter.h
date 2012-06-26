@@ -90,8 +90,11 @@ typedef struct plcrash_log_writer {
         /** Application version */
         char *app_version;
       
-        /** Application version */
+        /** Application short version */
         char *app_short_version;
+      
+        /** Application startup timestamp */
+        int64_t app_startup_timestamp;
     } application_info;
     
     /** Process data */
@@ -141,7 +144,7 @@ typedef struct plcrash_log_writer {
 } plcrash_log_writer_t;
 
 
-plcrash_error_t plcrash_log_writer_init (plcrash_log_writer_t *writer, NSString *app_identifier, NSString *app_version, NSString *app_short_version, NSString *report_guid);
+plcrash_error_t plcrash_log_writer_init (plcrash_log_writer_t *writer, NSString *app_identifier, NSString *app_version, NSString *app_short_version, time_t app_startup_timestamp, NSString *report_guid);
 void plcrash_log_writer_set_exception (plcrash_log_writer_t *writer, NSException *exception);
 
 void plcrash_log_writer_add_image (plcrash_log_writer_t *writer, const void *header_addr);

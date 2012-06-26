@@ -305,7 +305,7 @@ static void uncaught_exception_handler (NSException *exception) {
     assert(_applicationIdentifier != nil);
     assert(_applicationVersion != nil);
     assert(_applicationShortVersion != nil);
-    plcrash_log_writer_init(&signal_handler_context.writer, _applicationIdentifier, _applicationVersion, _applicationShortVersion, _crashReportGUID);
+    plcrash_log_writer_init(&signal_handler_context.writer, _applicationIdentifier, _applicationVersion, _applicationShortVersion, _applicationStartupTimestamp, _crashReportGUID);
     
     /* Enable dyld image monitoring */
     _dyld_register_func_for_add_image(image_add_callback);
@@ -392,6 +392,12 @@ static void uncaught_exception_handler (NSException *exception) {
 	CFStringRef stringGUID = CFUUIDCreateString(NULL, theGUID);
 	CFRelease(theGUID);
     _crashReportGUID = (NSString *)stringGUID;
+
+    /* Get the startup timestamp */
+    if (time(&_applicationStartupTimestamp) == (time_t)-1) {
+        PLCF_DEBUG("Failed to fetch timestamp: %s", strerror(errno));
+        _applicationStartupTimestamp = 0;
+    }
 
     /* No occurances of '/' should ever be in a bundle ID, but just to be safe, we escape them */
     NSString *appIdPath = [applicationIdentifier stringByReplacingOccurrencesOfString: @"/" withString: @"_"];

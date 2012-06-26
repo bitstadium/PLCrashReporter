@@ -104,6 +104,7 @@
     STAssertTrue(strcmp(appInfo->identifier, "test.id") == 0, @"Incorrect app ID written");
     STAssertTrue(strcmp(appInfo->version, "1.0") == 0, @"Incorrect app version written");
     STAssertTrue(strcmp(appInfo->short_version, "1.0") == 0, @"Incorrect app short version written");
+    STAssertTrue(appInfo->startup_timestamp != 0, @"App startup timestamp uninitialized");
 }
 
 // check a crash report's report info
@@ -220,12 +221,17 @@
 	CFStringRef stringGUID = CFUUIDCreateString(NULL, theGUID);
 	CFRelease(theGUID);
     
+    time_t timestamp = 0;
+    if (time(&timestamp) == (time_t)-1) {
+        timestamp = 0;
+    }
+    
     /* Open the output file */
     int fd = open([_logPath UTF8String], O_RDWR|O_CREAT|O_EXCL, 0644);
     plcrash_async_file_init(&file, fd, 0);
 
     /* Initialize a writer */
-    STAssertEquals(PLCRASH_ESUCCESS, plcrash_log_writer_init(&writer, @"test.id", @"1.0", @"1.0", (NSString *)stringGUID), @"Initialization failed");
+    STAssertEquals(PLCRASH_ESUCCESS, plcrash_log_writer_init(&writer, @"test.id", @"1.0", @"1.0", timestamp, (NSString *)stringGUID), @"Initialization failed");
 
     /* Set an exception with a valid return address call stack. */
     NSException *e;

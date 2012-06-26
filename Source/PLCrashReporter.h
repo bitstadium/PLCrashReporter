@@ -78,6 +78,9 @@ typedef struct PLCrashReporterCallbacks {
     /** Application short version */
     NSString *_applicationShortVersion;
 
+    /** Application startup timestamp */
+    time_t _applicationStartupTimestamp;
+  
     /** GUID for the crash report */
     NSString *_crashReportGUID;
   

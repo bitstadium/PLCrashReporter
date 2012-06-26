@@ -94,6 +94,9 @@ enum {
     
     /** CrashReport.app_info.app_short_version */
     PLCRASH_PROTO_APP_INFO_APP_SHORT_VERSION_ID = 3,
+    
+    /** CrashReport.app_info.app_startup_timestamp */
+    PLCRASH_PROTO_APP_INFO_APP_STARTUP_TIMESTAMP_ID = 4,
 
 
     /** CrashReport.threads */
@@ -238,6 +241,7 @@ enum {
  * @param app_identifier Unique per-application identifier. On Mac OS X, this is likely the CFBundleIdentifier.
  * @param app_version Application version string.
  * @param app_short_version Application short version string.
+ * @param app_startup_timestamp Application startup timestamp.
  * @param report_guid Crash Report GUID string.
  *
  * @note If this function fails, plcrash_log_writer_free() should be called
@@ -245,7 +249,7 @@ enum {
  *
  * @warning This function is not guaranteed to be async-safe, and must be called prior to enabling the crash handler.
  */
-plcrash_error_t plcrash_log_writer_init (plcrash_log_writer_t *writer, NSString *app_identifier, NSString *app_version, NSString *app_short_version, NSString *report_guid) {
+plcrash_error_t plcrash_log_writer_init (plcrash_log_writer_t *writer, NSString *app_identifier, NSString *app_version, NSString *app_short_version, time_t app_startup_timestamp, NSString *report_guid) {
     /* Default to 0 */
     memset(writer, 0, sizeof(*writer));
     
@@ -259,6 +263,7 @@ plcrash_error_t plcrash_log_writer_init (plcrash_log_writer_t *writer, NSString 
         writer->application_info.app_identifier = strdup([app_identifier UTF8String]);
         writer->application_info.app_version = strdup([app_version UTF8String]);
         writer->application_info.app_short_version = strdup([app_short_version UTF8String]);
+        writer->application_info.app_startup_timestamp = app_startup_timestamp;
     }
     
     /* Fetch the process information */
@@ -674,9 +679,10 @@ static size_t plcrash_writer_write_machine_info (plcrash_async_file_t *file, plc
  * @param file Output file
  * @param app_identifier Application identifier
  * @param app_version Application version
- * @param app_short_version Application version
+ * @param app_short_version Application short version
+ * @param app_startup_timestamp Application startup timestsamp
  */
-static size_t plcrash_writer_write_app_info (plcrash_async_file_t *file, const char *app_identifier, const char *app_version, const char *app_short_version) {
+static size_t plcrash_writer_write_app_info (plcrash_async_file_t *file, const char *app_identifier, const char *app_version, const char *app_short_version, int64_t app_startup_timestamp) {
     size_t rv = 0;
 
     /* App identifier */
@@ -687,6 +693,9 @@ static size_t plcrash_writer_write_app_info (plcrash_async_file_t *file, const c
     
     /* App short version */
     rv += plcrash_writer_pack(file, PLCRASH_PROTO_APP_INFO_APP_SHORT_VERSION_ID, PLPROTOBUF_C_TYPE_STRING, app_short_version);
+    
+    /* App startup timestamp */
+    rv += plcrash_writer_pack(file, PLCRASH_PROTO_APP_INFO_APP_STARTUP_TIMESTAMP_ID, PLPROTOBUF_C_TYPE_INT64, &app_startup_timestamp);
     
     return rv;
 }
@@ -1127,11 +1136,11 @@ plcrash_error_t plcrash_log_writer_write (plcrash_log_writer_t *writer, plcrash_
         uint32_t size;
 
         /* Determine size */
-        size = plcrash_writer_write_app_info(NULL, writer->application_info.app_identifier, writer->application_info.app_version, writer->application_info.app_short_version);
+        size = plcrash_writer_write_app_info(NULL, writer->application_info.app_identifier, writer->application_info.app_version, writer->application_info.app_short_version, writer->application_info.app_startup_timestamp);
         
         /* Write message */
         plcrash_writer_pack(file, PLCRASH_PROTO_APP_INFO_ID, PLPROTOBUF_C_TYPE_MESSAGE, &size);
-        plcrash_writer_write_app_info(file, writer->application_info.app_identifier, writer->application_info.app_version, writer->application_info.app_short_version);
+        plcrash_writer_write_app_info(file, writer->application_info.app_identifier, writer->application_info.app_version, writer->application_info.app_short_version, writer->application_info.app_startup_timestamp);
     }
     
     /* Process info */

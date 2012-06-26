@@ -407,6 +407,9 @@ error:
 - (PLCrashReportApplicationInfo *) extractApplicationInfo: (Plcrash__CrashReport__ApplicationInfo *) applicationInfo 
                                                     error: (NSError **) outError
 {    
+    NSString *shortVersion = nil;
+    NSDate *startupTimestamp = nil;
+    
     /* Validate */
     if (applicationInfo == NULL) {
         populate_nserror(outError, PLCrashReporterErrorCrashReportInvalid, 
@@ -432,10 +435,13 @@ error:
     }
 
     /* Short Version available? */
-    NSString *shortVersion = nil;
     if (applicationInfo->short_version != NULL) {
         shortVersion = [NSString stringWithUTF8String: applicationInfo->short_version];
     }
+
+    /* Startup timestamp available? */
+    if (applicationInfo->startup_timestamp != 0)
+        startupTimestamp = [NSDate dateWithTimeIntervalSince1970: applicationInfo->startup_timestamp];
 
     /* Done */
     NSString *identifier = [NSString stringWithUTF8String: applicationInfo->identifier];
@@ -444,7 +450,8 @@ error:
 
     return [[[PLCrashReportApplicationInfo alloc] initWithApplicationIdentifier: identifier
                                                           applicationVersion: version
-                                                        applicationShortVersion: shortVersion] autorelease];
+                                                        applicationShortVersion: shortVersion
+                                                    applicationStartupTimestamp:startupTimestamp] autorelease];
 }
 
 
