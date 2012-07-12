@@ -49,7 +49,7 @@ struct _PLCrashReportDecoder {
 - (NSArray *) extractImageInfo: (Plcrash__CrashReport *) crashReport error: (NSError **) outError;
 - (PLCrashReportExceptionInfo *) extractExceptionInfo: (Plcrash__CrashReport__Exception *) exceptionInfo error: (NSError **) outError;
 - (PLCrashReportSignalInfo *) extractSignalInfo: (Plcrash__CrashReport__Signal *) signalInfo error: (NSError **) outError;
-
+- (PLCrashReportReportInfo *) extractReportInfo: (Plcrash__CrashReport__ReportInfo *) reportInfo error: (NSError **) outError;
 @end
 
 
@@ -139,6 +139,13 @@ static void populate_nserror (NSError **error, PLCrashReporterError code, NSStri
             goto error;
     }
 
+    /* Report info, if it is available */
+    if (_decoder->crashReport->report_info != NULL) {
+        _reportInfo = [[self extractReportInfo: _decoder->crashReport->report_info error: outError] retain];
+        if (!_reportInfo)
+            goto error;
+    }
+
     return self;
 
 error:
@@ -149,12 +156,14 @@ error:
 - (void) dealloc {
     /* Free the data objects */
     [_systemInfo release];
+    [_machineInfo release];
     [_applicationInfo release];
     [_processInfo release];
     [_signalInfo release];
     [_threads release];
     [_images release];
     [_exceptionInfo release];
+    [_reportInfo release];
 
     /* Free the decoder state */
     if (_decoder != NULL) {
@@ -206,6 +215,13 @@ error:
     return NO;
 }
 
+// property getter. Returns YES if report information is available.
+- (BOOL) hasReportInfo {
+    if (_reportInfo != nil)
+        return YES;
+    return NO;
+}
+
 @synthesize systemInfo = _systemInfo;
 @synthesize machineInfo = _machineInfo;
 @synthesize applicationInfo = _applicationInfo;
@@ -214,6 +230,7 @@ error:
 @synthesize threads = _threads;
 @synthesize images = _images;
 @synthesize exceptionInfo = _exceptionInfo;
+@synthesize reportInfo = _reportInfo;
 
 @end
 
@@ -266,6 +283,35 @@ error:
     }
 
     return crashReport;
+}
+
+
+
+/**
+ * Extract crash report information from the crash log.
+ */
+- (PLCrashReportReportInfo *) extractReportInfo: (Plcrash__CrashReport__ReportInfo *) reportInfo 
+                                                    error: (NSError **) outError
+{    
+    NSString *reportGUID = nil;
+    
+    /* Validate */
+    if (reportInfo == NULL) {
+        populate_nserror(outError, PLCrashReporterErrorCrashReportInvalid, 
+                         NSLocalizedString(@"Crash report is missing Report Information section", 
+                                           @"Missing reportinfo in crash report"));
+        return nil;
+    }
+    
+    /* GUID available? */
+    if (reportInfo != NULL) {
+        if (reportInfo->report_guid != NULL) {
+            reportGUID = [NSString stringWithUTF8String: reportInfo->report_guid];
+        }
+    }
+    
+    
+    return [[[PLCrashReportReportInfo alloc] initWithReportGUID: reportGUID] autorelease];
 }
 
 
@@ -361,6 +407,9 @@ error:
 - (PLCrashReportApplicationInfo *) extractApplicationInfo: (Plcrash__CrashReport__ApplicationInfo *) applicationInfo 
                                                     error: (NSError **) outError
 {    
+    NSString *shortVersion = nil;
+    NSDate *startupTimestamp = nil;
+    
     /* Validate */
     if (applicationInfo == NULL) {
         populate_nserror(outError, PLCrashReporterErrorCrashReportInvalid, 
@@ -384,13 +433,25 @@ error:
                                            @"Missing app version in crash report"));
         return nil;
     }
-    
+
+    /* Short Version available? */
+    if (applicationInfo->short_version != NULL) {
+        shortVersion = [NSString stringWithUTF8String: applicationInfo->short_version];
+    }
+
+    /* Startup timestamp available? */
+    if (applicationInfo->startup_timestamp != 0)
+        startupTimestamp = [NSDate dateWithTimeIntervalSince1970: applicationInfo->startup_timestamp];
+
     /* Done */
     NSString *identifier = [NSString stringWithUTF8String: applicationInfo->identifier];
     NSString *version = [NSString stringWithUTF8String: applicationInfo->version];
+    
 
     return [[[PLCrashReportApplicationInfo alloc] initWithApplicationIdentifier: identifier
-                                                          applicationVersion: version] autorelease];
+                                                          applicationVersion: version
+                                                        applicationShortVersion: shortVersion
+                                                    applicationStartupTimestamp:startupTimestamp] autorelease];
 }
 
 

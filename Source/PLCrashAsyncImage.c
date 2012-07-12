@@ -92,7 +92,6 @@ void plcrash_async_image_list_append (plcrash_async_image_list_t *list, plcrash_
     /* Initialize the new entry. */
     plcrash_async_image_t *new = calloc(1, sizeof(plcrash_async_image_t));
     new->image = *image;
-    new->image.name = strdup(new->image.name);
     
     /* Update the image record and issue a memory barrier to ensure a consistent view. */
     OSMemoryBarrier();

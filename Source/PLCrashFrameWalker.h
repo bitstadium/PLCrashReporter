@@ -214,9 +214,9 @@ plframe_error_t plframe_get_reg (plframe_cursor_t *cursor, plframe_regnum_t regn
 plframe_error_t plframe_get_freg (plframe_cursor_t *cursor, plframe_regnum_t regnum, plframe_fpreg_t *fpreg);
 
 /**
- * Get symbol info for a cursor's current IP.
+ * Get symbol info for a IP.
  */
-plframe_error_t plframe_get_symbol (plframe_cursor_t *cursor, plframe_greg_t *symstart, const char ** const symname);
+plframe_error_t plframe_get_symbol (plframe_greg_t ip, plframe_greg_t *symstart, const char ** const symname);
 
 /**
  * @} plcrash_framewalker

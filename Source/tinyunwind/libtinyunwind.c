@@ -209,6 +209,11 @@ int tinyunw_step (tinyunw_cursor_t *fake_cursor, tinyunw_flags_t flags) {
         (cursor->current_context.__rip >= tinyunw_thread_start_symbol_start_address && cursor->current_context.__rip <= tinyunw_thread_start_symbol_end_address) ||
         cursor->current_context.__rip == 0)
     {
+        TINYUNW_DEBUGL(TINYUNW_DEBUG_STEP,
+                       "Not stepping past start(%lx-%lx)/thread_start(%lx-%lx) with RIP %llx",
+                       tinyunw_start_symbol_start_address, tinyunw_start_symbol_end_address,
+                       tinyunw_thread_start_symbol_start_address, tinyunw_thread_start_symbol_end_address,
+                       cursor->current_context.__rip);
         return TINYUNW_ENOFRAME;
     }
     
@@ -216,6 +221,7 @@ int tinyunw_step (tinyunw_cursor_t *fake_cursor, tinyunw_flags_t flags) {
     if (!(flags & TINYUNW_FLAG_NO_COMPACT)) {
         result = tinyunw_try_step_unwind(cursor);
         if (result == TINYUNW_ESUCCESS || (result != TINYUNW_ESUCCESS && result != TINYUNW_ENOINFO)) {
+            TINYUNW_DEBUGL(TINYUNW_DEBUG_STEP, "Returning result %d after compact unwinding.", result);
             return result;
         }
     }
@@ -226,6 +232,7 @@ int tinyunw_step (tinyunw_cursor_t *fake_cursor, tinyunw_flags_t flags) {
     if (!(flags & TINYUNW_FLAG_NO_DWARF)) {
         result = tinyunw_try_step_dwarf(cursor);
         if (result == TINYUNW_ESUCCESS || (result != TINYUNW_ESUCCESS && result != TINYUNW_ENOINFO)) {
+            TINYUNW_DEBUGL(TINYUNW_DEBUG_STEP, "Returning result %d after DWARF unwinding.", result);
             return result;
         }
     }
@@ -234,6 +241,7 @@ int tinyunw_step (tinyunw_cursor_t *fake_cursor, tinyunw_flags_t flags) {
     if ((flags & TINYUNW_FLAG_TRY_FRAME_POINTER)) {
         result = tinyunw_try_step_fp(cursor);
         if (result == TINYUNW_ESUCCESS || (result != TINYUNW_ESUCCESS && result != TINYUNW_ENOINFO)) {
+            TINYUNW_DEBUGL(TINYUNW_DEBUG_STEP, "Returning result %d after frame pointer unwinding.", result);
             return result;
         }
     }
@@ -242,12 +250,14 @@ int tinyunw_step (tinyunw_cursor_t *fake_cursor, tinyunw_flags_t flags) {
     if (!(flags & TINYUNW_FLAG_NO_STACKSCAN)) {
         result = tinyunw_try_step_stackscan(cursor);
         if (result == TINYUNW_ESUCCESS || (result != TINYUNW_ESUCCESS && result != TINYUNW_ENOINFO)) {
+            TINYUNW_DEBUGL(TINYUNW_DEBUG_STEP, "Returning result %d after stack scanning.", result);
             return result;
         }
     }
     
     /* Everything failed (or possibly the client passed flags to disable all
        possible efforts. Return no frame. */
+    TINYUNW_DEBUGL(TINYUNW_DEBUG_STEP, "Returning result %d after trying everything.", result);
     return result;
 #else
     return TINYUNW_EUNSPEC;

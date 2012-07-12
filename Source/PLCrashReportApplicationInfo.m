@@ -1,7 +1,7 @@
 /*
  * Author: Landon Fuller <landonf@plausiblelabs.com>
  *
- * Copyright (c) 2008-2009 Plausible Labs Cooperative, Inc.
+ * Copyright (c) 2008-2012 Plausible Labs Cooperative, Inc.
  * All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person
@@ -41,15 +41,21 @@
  *
  * @param applicationIdentifier Application identifier. This is usually the CFBundleIdentifier value.
  * @param applicationVersion Application version. This is usually the CFBundleVersion value.
+ * @param applicationShortVersion Application short version. This is usually the CFBundleShortVersionString value.
+ * @param applicationStartupTimestamp Application startup timestamp. This is set when initializing the crash reporter.
  */
 - (id) initWithApplicationIdentifier: (NSString *) applicationIdentifier 
                   applicationVersion: (NSString *) applicationVersion
+             applicationShortVersion: (NSString *) applicationShortVersion
+         applicationStartupTimestamp: (NSDate *) applicationStartupTimestamp
 {
     if ((self = [super init]) == nil)
         return nil;
 
     _applicationIdentifier = [applicationIdentifier retain];
     _applicationVersion = [applicationVersion retain];
+    _applicationShortVersion = [applicationShortVersion retain];
+    _applicationStartupTimestamp = [applicationStartupTimestamp retain];
 
     return self;
 }
@@ -57,10 +63,14 @@
 - (void) dealloc {
     [_applicationIdentifier release];
     [_applicationVersion release];
+    [_applicationShortVersion release];
+    [_applicationStartupTimestamp release];
     [super dealloc];
 }
 
 @synthesize applicationIdentifier = _applicationIdentifier;
 @synthesize applicationVersion = _applicationVersion;
+@synthesize applicationShortVersion = _applicationShortVersion;
+@synthesize applicationStartupTimestamp = _applicationStartupTimestamp;
 
 @end

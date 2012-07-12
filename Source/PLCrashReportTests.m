@@ -54,6 +54,9 @@
 - (void) setUp {
     /* Create a temporary log path */
     _logPath = [[NSTemporaryDirectory() stringByAppendingString: [[NSProcessInfo processInfo] globallyUniqueString]] retain];
+    
+    /* Setup libtinyunwind */
+    tinyunw_setimagetracking(true);
 
     /* Create the test thread */
     plframe_test_thread_spawn(&_thr_args);
@@ -90,13 +93,22 @@
         /* Steal the test thread's stack for iteration */
         plframe_cursor_thread_init(&cursor, pthread_mach_thread_np(_thr_args.thread), NULL);
     }
-    
+
+    CFUUIDRef theGUID = CFUUIDCreate(NULL);
+	CFStringRef stringGUID = CFUUIDCreateString(NULL, theGUID);
+	CFRelease(theGUID);
+
+    time_t timestamp = 0;
+    if (time(&timestamp) == (time_t)-1) {
+        timestamp = 0;
+    }
+
     /* Open the output file */
     int fd = open([_logPath UTF8String], O_RDWR|O_CREAT|O_EXCL, 0644);
     plcrash_async_file_init(&file, fd, 0);
     
     /* Initialize a writer */
-    STAssertEquals(PLCRASH_ESUCCESS, plcrash_log_writer_init(&writer, @"test.id", @"1.0"), @"Initialization failed");
+    STAssertEquals(PLCRASH_ESUCCESS, plcrash_log_writer_init(&writer, @"test.id", @"1.0", @"1.0", timestamp, (NSString *)stringGUID), @"Initialization failed");
     
     /* Set an exception with a valid return address call stack. */
     NSException *exception;

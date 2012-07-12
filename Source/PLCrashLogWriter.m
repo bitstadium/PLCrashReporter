@@ -1,7 +1,7 @@
 /*
  * Author: Landon Fuller <landonf@plausiblelabs.com>
  *
- * Copyright (c) 2008-2010 Plausible Labs Cooperative, Inc.
+ * Copyright (c) 2008-2012 Plausible Labs Cooperative, Inc.
  * All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person
@@ -91,6 +91,12 @@ enum {
     
     /** CrashReport.app_info.app_version */
     PLCRASH_PROTO_APP_INFO_APP_VERSION_ID = 2,
+    
+    /** CrashReport.app_info.app_short_version */
+    PLCRASH_PROTO_APP_INFO_APP_SHORT_VERSION_ID = 3,
+    
+    /** CrashReport.app_info.app_startup_timestamp */
+    PLCRASH_PROTO_APP_INFO_APP_STARTUP_TIMESTAMP_ID = 4,
 
 
     /** CrashReport.threads */
@@ -218,6 +224,13 @@ enum {
 
     /** CrashReport.machine_info.logical_processor_count */
     PLCRASH_PROTO_MACHINE_INFO_LOGICAL_PROCESSOR_COUNT_ID = 4,
+    
+    
+    /** CrashReport.report_info */
+    PLCRASH_PROTO_REPORT_INFO_ID = 9,
+    
+    /** CrashReport.report_info.report_guid */
+    PLCRASH_PROTO_REPORT_INFO_REPORT_GUID_ID = 1,
 };
 
 /**
@@ -227,20 +240,30 @@ enum {
  * @param writer Writer instance to be initialized.
  * @param app_identifier Unique per-application identifier. On Mac OS X, this is likely the CFBundleIdentifier.
  * @param app_version Application version string.
+ * @param app_short_version Application short version string.
+ * @param app_startup_timestamp Application startup timestamp.
+ * @param report_guid Crash Report GUID string.
  *
  * @note If this function fails, plcrash_log_writer_free() should be called
  * to free any partially allocated data.
  *
  * @warning This function is not guaranteed to be async-safe, and must be called prior to enabling the crash handler.
  */
-plcrash_error_t plcrash_log_writer_init (plcrash_log_writer_t *writer, NSString *app_identifier, NSString *app_version) {
+plcrash_error_t plcrash_log_writer_init (plcrash_log_writer_t *writer, NSString *app_identifier, NSString *app_version, NSString *app_short_version, time_t app_startup_timestamp, NSString *report_guid) {
     /* Default to 0 */
     memset(writer, 0, sizeof(*writer));
+    
+    /* Fetch the crash report information */
+    {
+        writer->report_info.report_guid = strdup([report_guid UTF8String]);
+    }
     
     /* Fetch the application information */
     {
         writer->application_info.app_identifier = strdup([app_identifier UTF8String]);
         writer->application_info.app_version = strdup([app_version UTF8String]);
+        writer->application_info.app_short_version = strdup([app_short_version UTF8String]);
+        writer->application_info.app_startup_timestamp = app_startup_timestamp;
     }
     
     /* Fetch the process information */
@@ -458,9 +481,18 @@ void plcrash_log_writer_set_exception (plcrash_log_writer_t *writer, NSException
         size_t i = 0;
         for (NSNumber *num in callStackArray) {
             assert(i < count);
-            writer->uncaught_exception.callstack[i] = (void *)(uintptr_t)[num unsignedLongLongValue];
+            
+            uintptr_t pc = [num unsignedLongLongValue];
+            
+            /* When encountering any call stack entry which is not a valid
+               symbol, stop. Exception backtraces tend to contain garbage at the
+               end. Do NOT stop if symbol information was just unavailable. */
+            if (tinyunw_get_symbol_info(pc - 1, NULL, NULL) == TINYUNW_EINVALIDIP)
+                break;
+            writer->uncaught_exception.callstack[i] = (void *)pc;
             i++;
         }
+        writer->uncaught_exception.callstack_count = i;
     }
 
     /* Ensure that any signal handler has a consistent view of the above initialization. */
@@ -482,11 +514,17 @@ plcrash_error_t plcrash_log_writer_close (plcrash_log_writer_t *writer) {
  * @warning This method is not async safe.
  */
 void plcrash_log_writer_free (plcrash_log_writer_t *writer) {
+    /* Free the report info */
+    if (writer->report_info.report_guid != NULL)
+        free(writer->report_info.report_guid);
+    
     /* Free the app info */
     if (writer->application_info.app_identifier != NULL)
         free(writer->application_info.app_identifier);
     if (writer->application_info.app_version != NULL)
         free(writer->application_info.app_version);
+    if (writer->application_info.app_short_version != NULL)
+        free(writer->application_info.app_short_version);
 
     /* Free the process info */
     if (writer->process_info.process_name != NULL) 
@@ -521,6 +559,23 @@ void plcrash_log_writer_free (plcrash_log_writer_t *writer) {
         if (writer->uncaught_exception.callstack != NULL)
             free(writer->uncaught_exception.callstack);
     }
+}
+
+/**
+ * @internal
+ *
+ * Write the report info message.
+ *
+ * @param file Output file
+ * @param report_guid Crash Report GUID
+ */
+static size_t plcrash_writer_write_report_info (plcrash_async_file_t *file, const char *report_guid) {
+    size_t rv = 0;
+    
+    /* Report GUID */
+    rv += plcrash_writer_pack(file, PLCRASH_PROTO_REPORT_INFO_REPORT_GUID_ID, PLPROTOBUF_C_TYPE_STRING, report_guid);
+    
+    return rv;
 }
 
 /**
@@ -624,8 +679,10 @@ static size_t plcrash_writer_write_machine_info (plcrash_async_file_t *file, plc
  * @param file Output file
  * @param app_identifier Application identifier
  * @param app_version Application version
+ * @param app_short_version Application short version
+ * @param app_startup_timestamp Application startup timestsamp
  */
-static size_t plcrash_writer_write_app_info (plcrash_async_file_t *file, const char *app_identifier, const char *app_version) {
+static size_t plcrash_writer_write_app_info (plcrash_async_file_t *file, const char *app_identifier, const char *app_version, const char *app_short_version, int64_t app_startup_timestamp) {
     size_t rv = 0;
 
     /* App identifier */
@@ -633,6 +690,12 @@ static size_t plcrash_writer_write_app_info (plcrash_async_file_t *file, const c
     
     /* App version */
     rv += plcrash_writer_pack(file, PLCRASH_PROTO_APP_INFO_APP_VERSION_ID, PLPROTOBUF_C_TYPE_STRING, app_version);
+    
+    /* App short version */
+    rv += plcrash_writer_pack(file, PLCRASH_PROTO_APP_INFO_APP_SHORT_VERSION_ID, PLPROTOBUF_C_TYPE_STRING, app_short_version);
+    
+    /* App startup timestamp */
+    rv += plcrash_writer_pack(file, PLCRASH_PROTO_APP_INFO_APP_STARTUP_TIMESTAMP_ID, PLPROTOBUF_C_TYPE_INT64, &app_startup_timestamp);
     
     return rv;
 }
@@ -767,19 +830,27 @@ static size_t plcrash_writer_write_thread_registers (plcrash_async_file_t *file,
  * @param file Output file
  * @param pcval The frame PC value.
  */
-static size_t plcrash_writer_write_thread_frame (plcrash_async_file_t *file, uint64_t pcval, plframe_cursor_t *cursor) {
+static size_t plcrash_writer_write_thread_frame (plcrash_async_file_t *file, uint64_t pcval) {
     size_t rv = 0;
     plframe_greg_t symstart;
     uint64_t savesym;
     const char * symname;
+    plframe_error_t err;
 
     rv += plcrash_writer_pack(file, PLCRASH_PROTO_THREAD_FRAME_PC_ID, PLPROTOBUF_C_TYPE_UINT64, &pcval);
     
-    if (cursor && plframe_get_symbol(cursor, &symstart, &symname) == PLFRAME_ESUCCESS) {
+    /* Use IP - 1 to account for the way exception throw instructions are
+       emitted by the compiler. This can not produce a false symbol, as a crash
+       must happen at least one instruction into a legitimate function, and
+       addresses that are not in a legitimate function will never produce a
+       useful symbol in any case. */
+    if ((err = plframe_get_symbol(pcval - 1, &symstart, &symname)) == PLFRAME_ESUCCESS) {
         /* If we have a symbol, write its info. */
         savesym = symstart;
         rv += plcrash_writer_pack(file, PLCRASH_PROTO_THREAD_FRAME_SYMBOL_NAME, PLPROTOBUF_C_TYPE_STRING, symname);
         rv += plcrash_writer_pack(file, PLCRASH_PROTO_THREAD_FRAME_SYMBOL_START, PLPROTOBUF_C_TYPE_UINT64, &savesym);
+    } else {
+        PLCF_DEBUG("Couldn't get symbol for %llX got error: %s", pcval, plframe_strerror(err));
     }
 
     return rv;
@@ -848,10 +919,10 @@ static size_t plcrash_writer_write_thread (plcrash_async_file_t *file, thread_t 
             }
 
             /* Determine the size */
-            frame_size = plcrash_writer_write_thread_frame(NULL, pc, &cursor);
+            frame_size = plcrash_writer_write_thread_frame(NULL, pc);
             
             rv += plcrash_writer_pack(file, PLCRASH_PROTO_THREAD_FRAMES_ID, PLPROTOBUF_C_TYPE_MESSAGE, &frame_size);
-            rv += plcrash_writer_write_thread_frame(file, pc, &cursor);
+            rv += plcrash_writer_write_thread_frame(file, pc);
             frame_count++;
         }
 
@@ -942,10 +1013,10 @@ static size_t plcrash_writer_write_exception (plcrash_async_file_t *file, plcras
         uint64_t pc = (uint64_t)(uintptr_t) writer->uncaught_exception.callstack[i];
         
         /* Determine the size */
-        uint32_t frame_size = plcrash_writer_write_thread_frame(NULL, pc, NULL);
+        uint32_t frame_size = plcrash_writer_write_thread_frame(NULL, pc);
         
         rv += plcrash_writer_pack(file, PLCRASH_PROTO_EXCEPTION_FRAMES_ID, PLPROTOBUF_C_TYPE_MESSAGE, &frame_size);
-        rv += plcrash_writer_write_thread_frame(file, pc, NULL);
+        rv += plcrash_writer_write_thread_frame(file, pc);
         frame_count++;
     }
 
@@ -1017,6 +1088,18 @@ plcrash_error_t plcrash_log_writer_write (plcrash_log_writer_t *writer, plcrash_
         plcrash_async_file_write(file, &version, sizeof(version));
     }
 
+    /* Report Info */
+    {
+        uint32_t size;
+        
+        /* Determine size */
+        size = plcrash_writer_write_report_info(NULL, writer->report_info.report_guid);
+        
+        /* Write message */
+        plcrash_writer_pack(file, PLCRASH_PROTO_REPORT_INFO_ID, PLPROTOBUF_C_TYPE_MESSAGE, &size);
+        plcrash_writer_write_report_info(file, writer->report_info.report_guid);
+    }
+    
     /* System Info */
     {
         time_t timestamp;
@@ -1053,11 +1136,11 @@ plcrash_error_t plcrash_log_writer_write (plcrash_log_writer_t *writer, plcrash_
         uint32_t size;
 
         /* Determine size */
-        size = plcrash_writer_write_app_info(NULL, writer->application_info.app_identifier, writer->application_info.app_version);
+        size = plcrash_writer_write_app_info(NULL, writer->application_info.app_identifier, writer->application_info.app_version, writer->application_info.app_short_version, writer->application_info.app_startup_timestamp);
         
         /* Write message */
         plcrash_writer_pack(file, PLCRASH_PROTO_APP_INFO_ID, PLPROTOBUF_C_TYPE_MESSAGE, &size);
-        plcrash_writer_write_app_info(file, writer->application_info.app_identifier, writer->application_info.app_version);
+        plcrash_writer_write_app_info(file, writer->application_info.app_identifier, writer->application_info.app_version, writer->application_info.app_short_version, writer->application_info.app_startup_timestamp);
     }
     
     /* Process info */

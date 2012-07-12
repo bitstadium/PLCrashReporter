@@ -85,7 +85,6 @@
 		054627BC11D99D06007891C7 /* PLCrashReportFormatter.h in Headers */ = {isa = PBXBuildFile; fileRef = 054627B811D99D06007891C7 /* PLCrashReportFormatter.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		054627BD11D99D06007891C7 /* PLCrashReportFormatter.h in Headers */ = {isa = PBXBuildFile; fileRef = 054627B811D99D06007891C7 /* PLCrashReportFormatter.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		054F51080EEC73C80034B184 /* PLCrashReporter.h in Headers */ = {isa = PBXBuildFile; fileRef = 054F51070EEC73C80034B184 /* PLCrashReporter.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		0550A10E0EECFEC80037F7C3 /* libCrashReporter-iphoneos.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 05CD31520EE936A9000FDE88 /* libCrashReporter-iphoneos.a */; };
 		0550A1100EECFEDC0037F7C3 /* libCrashReporter-iphonesimulator.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 05CD31630EE93905000FDE88 /* libCrashReporter-iphonesimulator.a */; };
 		05654F770EFA5B54004283F5 /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 05654F760EFA5B54004283F5 /* CoreServices.framework */; };
 		05654F780EFA5B54004283F5 /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 05654F760EFA5B54004283F5 /* CoreServices.framework */; };
@@ -345,6 +344,12 @@
 		05F415560EF9E078008050CF /* PLCrashReportExceptionInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 05F415520EF9E078008050CF /* PLCrashReportExceptionInfo.m */; };
 		05F415570EF9E078008050CF /* PLCrashReportExceptionInfo.h in Headers */ = {isa = PBXBuildFile; fileRef = 05F415510EF9E078008050CF /* PLCrashReportExceptionInfo.h */; };
 		05F415580EF9E078008050CF /* PLCrashReportExceptionInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 05F415520EF9E078008050CF /* PLCrashReportExceptionInfo.m */; };
+		1E7F6C6D159A738D00E6826D /* PLCrashReportReportInfo.h in Headers */ = {isa = PBXBuildFile; fileRef = 1EA888211593E1CD00B8BA59 /* PLCrashReportReportInfo.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		1EA8882A1593E1CD00B8BA59 /* PLCrashReportReportInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 1EA888221593E1CD00B8BA59 /* PLCrashReportReportInfo.m */; };
+		1EA8882B1593E92D00B8BA59 /* PLCrashReportReportInfo.h in Headers */ = {isa = PBXBuildFile; fileRef = 1EA888211593E1CD00B8BA59 /* PLCrashReportReportInfo.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		1EEB22F51594D3010049424B /* PLCrashReportReportInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 1EA888221593E1CD00B8BA59 /* PLCrashReportReportInfo.m */; };
+		1EEB22F71594D3020049424B /* PLCrashReportReportInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 1EA888221593E1CD00B8BA59 /* PLCrashReportReportInfo.m */; };
+		1EEB22F81594D3020049424B /* PLCrashReportReportInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 1EA888221593E1CD00B8BA59 /* PLCrashReportReportInfo.m */; };
 		2D0E10461141F7DC00CE1BD6 /* PLCrashReportProcessInfo.h in Headers */ = {isa = PBXBuildFile; fileRef = 2D0E10441141F7DC00CE1BD6 /* PLCrashReportProcessInfo.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		2D0E10471141F7DC00CE1BD6 /* PLCrashReportProcessInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 2D0E10451141F7DC00CE1BD6 /* PLCrashReportProcessInfo.m */; };
 		2D0E10481141F7DC00CE1BD6 /* PLCrashReportProcessInfo.h in Headers */ = {isa = PBXBuildFile; fileRef = 2D0E10441141F7DC00CE1BD6 /* PLCrashReportProcessInfo.h */; };
@@ -367,9 +372,9 @@
 		FA2EB22E1511D41C000B6687 /* libtinyunwind_image.h in Headers */ = {isa = PBXBuildFile; fileRef = FA2EB22D1511D41B000B6687 /* libtinyunwind_image.h */; };
 		FA2EB2301511D852000B6687 /* libtinyunwind_image.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB22F1511D852000B6687 /* libtinyunwind_image.c */; };
 		FA2EB2321511DEC1000B6687 /* libtinyunwind_asynclist.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB2311511DEC1000B6687 /* libtinyunwind_asynclist.c */; };
-		FA2EB2351511E857000B6687 /* libtinyunwind.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FA2EB2071510E518000B6687 /* libtinyunwind.a */; };
-		FA2EB2381511E863000B6687 /* libtinyunwind.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FA2EB2071510E518000B6687 /* libtinyunwind.a */; };
-		FA2EB23C1511EBFE000B6687 /* libtinyunwind.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FA2EB2071510E518000B6687 /* libtinyunwind.a */; };
+		FA2EB2351511E857000B6687 /* libtinyunwind-MacOSX.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FA2EB2071510E518000B6687 /* libtinyunwind-MacOSX.a */; };
+		FA2EB2381511E863000B6687 /* libtinyunwind-MacOSX.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FA2EB2071510E518000B6687 /* libtinyunwind-MacOSX.a */; };
+		FA2EB23C1511EBFE000B6687 /* libtinyunwind-MacOSX.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FA2EB2071510E518000B6687 /* libtinyunwind-MacOSX.a */; };
 		FA2EB24715120180000B6687 /* libtinyunwind_dwarf.h in Headers */ = {isa = PBXBuildFile; fileRef = FA2EB2461512017F000B6687 /* libtinyunwind_dwarf.h */; };
 		FA43C04D15095ED7002483C0 /* PLCrashMachOImage.h in Headers */ = {isa = PBXBuildFile; fileRef = FA43C04B15095ED7002483C0 /* PLCrashMachOImage.h */; };
 		FA43C04E15095ED7002483C0 /* PLCrashMachOImage.h in Headers */ = {isa = PBXBuildFile; fileRef = FA43C04B15095ED7002483C0 /* PLCrashMachOImage.h */; };
@@ -384,6 +389,35 @@
 		FA43C05715095ED7002483C0 /* PLCrashMachOImage.c in Sources */ = {isa = PBXBuildFile; fileRef = FA43C04C15095ED7002483C0 /* PLCrashMachOImage.c */; };
 		FA43C05815095ED7002483C0 /* PLCrashMachOImage.c in Sources */ = {isa = PBXBuildFile; fileRef = FA43C04C15095ED7002483C0 /* PLCrashMachOImage.c */; };
 		FA43C05915095ED7002483C0 /* PLCrashMachOImage.c in Sources */ = {isa = PBXBuildFile; fileRef = FA43C04C15095ED7002483C0 /* PLCrashMachOImage.c */; };
+		FAB811CB1575FE0300210D44 /* libtinyunwind.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB20F1510EE3C000B6687 /* libtinyunwind.c */; };
+		FAB811CC1575FE0300210D44 /* libtinyunwind_getcontext.s in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB2161511ABE1000B6687 /* libtinyunwind_getcontext.s */; };
+		FAB811CD1575FE0300210D44 /* libtinyunwind_dwarf.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB2221511C1B5000B6687 /* libtinyunwind_dwarf.c */; };
+		FAB811CE1575FE0300210D44 /* libtinyunwind_compact.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB2251511C37D000B6687 /* libtinyunwind_compact.c */; };
+		FAB811CF1575FE0300210D44 /* libtinyunwind_framepointer.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB2271511C3A8000B6687 /* libtinyunwind_framepointer.c */; };
+		FAB811D01575FE0300210D44 /* libtinyunwind_stackscan.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB2291511C3C5000B6687 /* libtinyunwind_stackscan.c */; };
+		FAB811D11575FE0300210D44 /* libtinyunwind_image.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB22F1511D852000B6687 /* libtinyunwind_image.c */; };
+		FAB811D21575FE0300210D44 /* libtinyunwind_asynclist.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB2311511DEC1000B6687 /* libtinyunwind_asynclist.c */; };
+		FAB811D51575FE0300210D44 /* libtinyunwind.h in Headers */ = {isa = PBXBuildFile; fileRef = FA2EB20D1510E687000B6687 /* libtinyunwind.h */; };
+		FAB811D61575FE0300210D44 /* libtinyunwind_internal.h in Headers */ = {isa = PBXBuildFile; fileRef = FA2EB2111510EE78000B6687 /* libtinyunwind_internal.h */; };
+		FAB811D71575FE0300210D44 /* libtinyunwind_asynclist.h in Headers */ = {isa = PBXBuildFile; fileRef = FA2EB22B1511CEA5000B6687 /* libtinyunwind_asynclist.h */; };
+		FAB811D81575FE0300210D44 /* libtinyunwind_image.h in Headers */ = {isa = PBXBuildFile; fileRef = FA2EB22D1511D41B000B6687 /* libtinyunwind_image.h */; };
+		FAB811D91575FE0300210D44 /* libtinyunwind_dwarf.h in Headers */ = {isa = PBXBuildFile; fileRef = FA2EB2461512017F000B6687 /* libtinyunwind_dwarf.h */; };
+		FAB812081575FEF800210D44 /* libtinyunwind-iphoneos.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FAB811DD1575FE0300210D44 /* libtinyunwind-iphoneos.a */; };
+		FAB8120F1576022700210D44 /* libtinyunwind.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB20F1510EE3C000B6687 /* libtinyunwind.c */; };
+		FAB812101576022700210D44 /* libtinyunwind_getcontext.s in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB2161511ABE1000B6687 /* libtinyunwind_getcontext.s */; };
+		FAB812111576022700210D44 /* libtinyunwind_dwarf.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB2221511C1B5000B6687 /* libtinyunwind_dwarf.c */; };
+		FAB812121576022700210D44 /* libtinyunwind_compact.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB2251511C37D000B6687 /* libtinyunwind_compact.c */; };
+		FAB812131576022700210D44 /* libtinyunwind_framepointer.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB2271511C3A8000B6687 /* libtinyunwind_framepointer.c */; };
+		FAB812141576022700210D44 /* libtinyunwind_stackscan.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB2291511C3C5000B6687 /* libtinyunwind_stackscan.c */; };
+		FAB812151576022700210D44 /* libtinyunwind_image.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB22F1511D852000B6687 /* libtinyunwind_image.c */; };
+		FAB812161576022700210D44 /* libtinyunwind_asynclist.c in Sources */ = {isa = PBXBuildFile; fileRef = FA2EB2311511DEC1000B6687 /* libtinyunwind_asynclist.c */; };
+		FAB812191576022700210D44 /* libtinyunwind.h in Headers */ = {isa = PBXBuildFile; fileRef = FA2EB20D1510E687000B6687 /* libtinyunwind.h */; };
+		FAB8121A1576022700210D44 /* libtinyunwind_internal.h in Headers */ = {isa = PBXBuildFile; fileRef = FA2EB2111510EE78000B6687 /* libtinyunwind_internal.h */; };
+		FAB8121B1576022700210D44 /* libtinyunwind_asynclist.h in Headers */ = {isa = PBXBuildFile; fileRef = FA2EB22B1511CEA5000B6687 /* libtinyunwind_asynclist.h */; };
+		FAB8121C1576022700210D44 /* libtinyunwind_image.h in Headers */ = {isa = PBXBuildFile; fileRef = FA2EB22D1511D41B000B6687 /* libtinyunwind_image.h */; };
+		FAB8121D1576022700210D44 /* libtinyunwind_dwarf.h in Headers */ = {isa = PBXBuildFile; fileRef = FA2EB2461512017F000B6687 /* libtinyunwind_dwarf.h */; };
+		FAB812241576025A00210D44 /* libtinyunwind-iphonesimulator.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FAB812211576022700210D44 /* libtinyunwind-iphonesimulator.a */; };
+		FAB812251576060500210D44 /* libCrashReporter-iphoneos.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 05CD31520EE936A9000FDE88 /* libCrashReporter-iphoneos.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildRule section */
@@ -642,6 +676,20 @@
 			remoteGlobalIDString = FA2EB2061510E518000B6687;
 			remoteInfo = tinyunwind;
 		};
+		FAB81209157601AE00210D44 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0867D690FE84028FC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FAB811C91575FE0300210D44;
+			remoteInfo = "tinyunwind-iOS";
+		};
+		FAB812221576025600210D44 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0867D690FE84028FC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FAB8120D1576022700210D44;
+			remoteInfo = "tinyunwind-iOS-Simulator";
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -762,11 +810,13 @@
 		05F415510EF9E078008050CF /* PLCrashReportExceptionInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLCrashReportExceptionInfo.h; sourceTree = "<group>"; usesTabs = 0; };
 		05F415520EF9E078008050CF /* PLCrashReportExceptionInfo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLCrashReportExceptionInfo.m; sourceTree = "<group>"; usesTabs = 0; };
 		0867D69BFE84028FC02AAC07 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
-		2D0E10441141F7DC00CE1BD6 /* PLCrashReportProcessInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLCrashReportProcessInfo.h; sourceTree = "<group>"; usesTabs = 0; };
-		2D0E10451141F7DC00CE1BD6 /* PLCrashReportProcessInfo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLCrashReportProcessInfo.m; sourceTree = "<group>"; usesTabs = 0; };
+		1EA888211593E1CD00B8BA59 /* PLCrashReportReportInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLCrashReportReportInfo.h; sourceTree = "<group>"; };
+		1EA888221593E1CD00B8BA59 /* PLCrashReportReportInfo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLCrashReportReportInfo.m; sourceTree = "<group>"; };
+		2D0E10441141F7DC00CE1BD6 /* PLCrashReportProcessInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLCrashReportProcessInfo.h; sourceTree = "<group>"; };
+		2D0E10451141F7DC00CE1BD6 /* PLCrashReportProcessInfo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLCrashReportProcessInfo.m; sourceTree = "<group>"; };
 		8DC2EF5A0486A6940098B216 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Resources/Info.plist; sourceTree = "<group>"; };
 		8DC2EF5B0486A6940098B216 /* CrashReporter.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = CrashReporter.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		FA2EB2071510E518000B6687 /* libtinyunwind.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libtinyunwind.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		FA2EB2071510E518000B6687 /* libtinyunwind-MacOSX.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libtinyunwind-MacOSX.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		FA2EB20D1510E687000B6687 /* libtinyunwind.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = libtinyunwind.h; path = tinyunwind/libtinyunwind.h; sourceTree = "<group>"; usesTabs = 0; };
 		FA2EB20F1510EE3C000B6687 /* libtinyunwind.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = libtinyunwind.c; path = tinyunwind/libtinyunwind.c; sourceTree = "<group>"; usesTabs = 0; };
 		FA2EB2111510EE78000B6687 /* libtinyunwind_internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = libtinyunwind_internal.h; path = tinyunwind/libtinyunwind_internal.h; sourceTree = "<group>"; usesTabs = 0; };
@@ -782,6 +832,8 @@
 		FA2EB2461512017F000B6687 /* libtinyunwind_dwarf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = libtinyunwind_dwarf.h; path = tinyunwind/libtinyunwind_dwarf.h; sourceTree = "<group>"; usesTabs = 0; };
 		FA43C04B15095ED7002483C0 /* PLCrashMachOImage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLCrashMachOImage.h; sourceTree = "<group>"; };
 		FA43C04C15095ED7002483C0 /* PLCrashMachOImage.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = PLCrashMachOImage.c; sourceTree = "<group>"; };
+		FAB811DD1575FE0300210D44 /* libtinyunwind-iphoneos.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libtinyunwind-iphoneos.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		FAB812211576022700210D44 /* libtinyunwind-iphonesimulator.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libtinyunwind-iphonesimulator.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -820,6 +872,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FAB812081575FEF800210D44 /* libtinyunwind-iphoneos.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -827,6 +880,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FAB812241576025A00210D44 /* libtinyunwind-iphonesimulator.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -834,7 +888,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				FA2EB23C1511EBFE000B6687 /* libtinyunwind.a in Frameworks */,
+				FA2EB23C1511EBFE000B6687 /* libtinyunwind-MacOSX.a in Frameworks */,
 				05CD34380EEA60BB000FDE88 /* CrashReporter.framework in Frameworks */,
 				05654F790EFA5B54004283F5 /* CoreServices.framework in Frameworks */,
 			);
@@ -852,7 +906,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0550A10E0EECFEC80037F7C3 /* libCrashReporter-iphoneos.a in Frameworks */,
+				FAB812251576060500210D44 /* libCrashReporter-iphoneos.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -869,7 +923,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				FA2EB2351511E857000B6687 /* libtinyunwind.a in Frameworks */,
+				FA2EB2351511E857000B6687 /* libtinyunwind-MacOSX.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -885,13 +939,27 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				FA2EB2381511E863000B6687 /* libtinyunwind.a in Frameworks */,
+				FA2EB2381511E863000B6687 /* libtinyunwind-MacOSX.a in Frameworks */,
 				05CD32110EE93AF9000FDE88 /* Foundation.framework in Frameworks */,
 				05654F770EFA5B54004283F5 /* CoreServices.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		FA2EB2041510E518000B6687 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FAB811D31575FE0300210D44 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FAB812171576022700210D44 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -917,7 +985,9 @@
 				058812B91040582D009128FB /* CrashReporter.framework */,
 				052A45CF136353FB00987004 /* DemoCrash-iOS-Device.app */,
 				052A464F136355FD00987004 /* DemoCrash-iOS-Simulator.app */,
-				FA2EB2071510E518000B6687 /* libtinyunwind.a */,
+				FA2EB2071510E518000B6687 /* libtinyunwind-MacOSX.a */,
+				FAB811DD1575FE0300210D44 /* libtinyunwind-iphoneos.a */,
+				FAB812211576022700210D44 /* libtinyunwind-iphonesimulator.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1188,6 +1258,7 @@
 				05F411A40EF8DA31008050CF /* PLCrashReport.h */,
 				05F411A50EF8DA31008050CF /* PLCrashReport.m */,
 				05F411AC0EF8DE68008050CF /* PLCrashReportTests.m */,
+				1EA8881F1593E1AB00B8BA59 /* Report Info */,
 				05BB83F91364AD4700D53B84 /* System Info */,
 				05BB84301364B70100D53B84 /* Machine Info */,
 				05BB83FA1364AD5900D53B84 /* Application Info */,
@@ -1212,8 +1283,10 @@
 				05CD32750EE93E5A000FDE88 /* Tools */,
 				059670E30EEFADA6008A0601 /* Dependencies */,
 			);
+			indentWidth = 4;
 			name = CrashReporter;
 			sourceTree = "<group>";
+			tabWidth = 4;
 		};
 		0867D69AFE84028FC02AAC07 /* External Frameworks and Libraries */ = {
 			isa = PBXGroup;
@@ -1273,6 +1346,15 @@
 			name = "Other Frameworks";
 			sourceTree = "<group>";
 		};
+		1EA8881F1593E1AB00B8BA59 /* Report Info */ = {
+			isa = PBXGroup;
+			children = (
+				1EA888211593E1CD00B8BA59 /* PLCrashReportReportInfo.h */,
+				1EA888221593E1CD00B8BA59 /* PLCrashReportReportInfo.m */,
+			);
+			name = "Report Info";
+			sourceTree = "<group>";
+		};
 		32C88DFF0371C24200C91783 /* Other Sources */ = {
 			isa = PBXGroup;
 			children = (
@@ -1324,6 +1406,7 @@
 				05EC51DC105316E900DB9D39 /* PLCrashLogWriter.h in Headers */,
 				05EC51DD105316E900DB9D39 /* PLCrashLogWriterEncoding.h in Headers */,
 				05EC51DE105316E900DB9D39 /* PLCrashReport.h in Headers */,
+				1EA8882B1593E92D00B8BA59 /* PLCrashReportReportInfo.h in Headers */,
 				05EC51DF105316E900DB9D39 /* PLCrashReportSystemInfo.h in Headers */,
 				05EC51E0105316E900DB9D39 /* PLCrashReportApplicationInfo.h in Headers */,
 				05EC51E1105316E900DB9D39 /* PLCrashReportThreadInfo.h in Headers */,
@@ -1433,6 +1516,7 @@
 				059666DC0EEDDFB8008A0601 /* PLCrashFrameWalker.h in Headers */,
 				05966A1E0EEE5281008A0601 /* PLCrashFrameWalker_arm.h in Headers */,
 				059670290EEF6B1A008A0601 /* PLCrashLogWriter.h in Headers */,
+				1E7F6C6D159A738D00E6826D /* PLCrashReportReportInfo.h in Headers */,
 				05CD36D50EF25717000FDE88 /* PLCrashLogWriterEncoding.h in Headers */,
 				05F411AA0EF8DA31008050CF /* PLCrashReport.h in Headers */,
 				05F413490EF995C0008050CF /* PLCrashReportSystemInfo.h in Headers */,
@@ -1463,6 +1547,30 @@
 				FA2EB22C1511CEA5000B6687 /* libtinyunwind_asynclist.h in Headers */,
 				FA2EB22E1511D41C000B6687 /* libtinyunwind_image.h in Headers */,
 				FA2EB24715120180000B6687 /* libtinyunwind_dwarf.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FAB811D41575FE0300210D44 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FAB811D51575FE0300210D44 /* libtinyunwind.h in Headers */,
+				FAB811D61575FE0300210D44 /* libtinyunwind_internal.h in Headers */,
+				FAB811D71575FE0300210D44 /* libtinyunwind_asynclist.h in Headers */,
+				FAB811D81575FE0300210D44 /* libtinyunwind_image.h in Headers */,
+				FAB811D91575FE0300210D44 /* libtinyunwind_dwarf.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FAB812181576022700210D44 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FAB812191576022700210D44 /* libtinyunwind.h in Headers */,
+				FAB8121A1576022700210D44 /* libtinyunwind_internal.h in Headers */,
+				FAB8121B1576022700210D44 /* libtinyunwind_asynclist.h in Headers */,
+				FAB8121C1576022700210D44 /* libtinyunwind_image.h in Headers */,
+				FAB8121D1576022700210D44 /* libtinyunwind_dwarf.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1556,6 +1664,7 @@
 				05F411FE0EF8E070008050CF /* PBXBuildRule */,
 			);
 			dependencies = (
+				FAB8120A157601AE00210D44 /* PBXTargetDependency */,
 			);
 			name = "CrashReporter-iOS-Device";
 			productName = "CrashReporter-iPhoneOS";
@@ -1574,6 +1683,7 @@
 				05F411FF0EF8E070008050CF /* PBXBuildRule */,
 			);
 			dependencies = (
+				FAB812231576025600210D44 /* PBXTargetDependency */,
 			);
 			name = "CrashReporter-iOS-Simulator";
 			productName = "CrashReporter-iPhoneSimulator";
@@ -1717,9 +1827,9 @@
 			productReference = 8DC2EF5B0486A6940098B216 /* CrashReporter.framework */;
 			productType = "com.apple.product-type.framework";
 		};
-		FA2EB2061510E518000B6687 /* tinyunwind */ = {
+		FA2EB2061510E518000B6687 /* tinyunwind-MacOSX */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = FA2EB2081510E518000B6687 /* Build configuration list for PBXNativeTarget "tinyunwind" */;
+			buildConfigurationList = FA2EB2081510E518000B6687 /* Build configuration list for PBXNativeTarget "tinyunwind-MacOSX" */;
 			buildPhases = (
 				FA2EB2031510E518000B6687 /* Sources */,
 				FA2EB2041510E518000B6687 /* Frameworks */,
@@ -1729,9 +1839,43 @@
 			);
 			dependencies = (
 			);
-			name = tinyunwind;
+			name = "tinyunwind-MacOSX";
 			productName = tinyunwind;
-			productReference = FA2EB2071510E518000B6687 /* libtinyunwind.a */;
+			productReference = FA2EB2071510E518000B6687 /* libtinyunwind-MacOSX.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		FAB811C91575FE0300210D44 /* tinyunwind-iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FAB811DA1575FE0300210D44 /* Build configuration list for PBXNativeTarget "tinyunwind-iOS" */;
+			buildPhases = (
+				FAB811CA1575FE0300210D44 /* Sources */,
+				FAB811D31575FE0300210D44 /* Frameworks */,
+				FAB811D41575FE0300210D44 /* Headers */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "tinyunwind-iOS";
+			productName = tinyunwind;
+			productReference = FAB811DD1575FE0300210D44 /* libtinyunwind-iphoneos.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		FAB8120D1576022700210D44 /* tinyunwind-iOS-Simulator */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FAB8121E1576022700210D44 /* Build configuration list for PBXNativeTarget "tinyunwind-iOS-Simulator" */;
+			buildPhases = (
+				FAB8120E1576022700210D44 /* Sources */,
+				FAB812171576022700210D44 /* Frameworks */,
+				FAB812181576022700210D44 /* Headers */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "tinyunwind-iOS-Simulator";
+			productName = tinyunwind;
+			productReference = FAB812211576022700210D44 /* libtinyunwind-iphonesimulator.a */;
 			productType = "com.apple.product-type.library.static";
 		};
 /* End PBXNativeTarget section */
@@ -1760,7 +1904,9 @@
 			targets = (
 				058812D410405908009128FB /* Disk Image */,
 				05CD31680EE939D0000FDE88 /* CrashReporter */,
-				FA2EB2061510E518000B6687 /* tinyunwind */,
+				FA2EB2061510E518000B6687 /* tinyunwind-MacOSX */,
+				FAB811C91575FE0300210D44 /* tinyunwind-iOS */,
+				FAB8120D1576022700210D44 /* tinyunwind-iOS-Simulator */,
 				05E731F20EFA1AAB005EDFB7 /* CrashReporter-MacOSX-Static */,
 				8DC2EF4F0486A6940098B216 /* CrashReporter-MacOSX */,
 				058812B81040582D009128FB /* CrashReporter-iOS */,
@@ -1982,6 +2128,7 @@
 				05BB83F41364AD3E00D53B84 /* PLCrashReportMachineInfo.m in Sources */,
 				05BB84891364EDF200D53B84 /* PLCrashSysctl.c in Sources */,
 				FA43C05515095ED7002483C0 /* PLCrashMachOImage.c in Sources */,
+				1EEB22F51594D3010049424B /* PLCrashReportReportInfo.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2017,6 +2164,7 @@
 				05BB83F61364AD3E00D53B84 /* PLCrashReportMachineInfo.m in Sources */,
 				05BB848B1364EDF200D53B84 /* PLCrashSysctl.c in Sources */,
 				FA43C05615095ED7002483C0 /* PLCrashMachOImage.c in Sources */,
+				1EA8882A1593E1CD00B8BA59 /* PLCrashReportReportInfo.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2155,6 +2303,7 @@
 				05BB83F81364AD3E00D53B84 /* PLCrashReportMachineInfo.m in Sources */,
 				05BB848D1364EDF200D53B84 /* PLCrashSysctl.c in Sources */,
 				FA43C05215095ED7002483C0 /* PLCrashMachOImage.c in Sources */,
+				1EEB22F81594D3020049424B /* PLCrashReportReportInfo.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2198,6 +2347,7 @@
 				05BB83F21364AD3E00D53B84 /* PLCrashReportMachineInfo.m in Sources */,
 				05BB84871364EDF200D53B84 /* PLCrashSysctl.c in Sources */,
 				FA43C05315095ED7002483C0 /* PLCrashMachOImage.c in Sources */,
+				1EEB22F71594D3020049424B /* PLCrashReportReportInfo.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2213,6 +2363,36 @@
 				FA2EB22A1511C3C5000B6687 /* libtinyunwind_stackscan.c in Sources */,
 				FA2EB2301511D852000B6687 /* libtinyunwind_image.c in Sources */,
 				FA2EB2321511DEC1000B6687 /* libtinyunwind_asynclist.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FAB811CA1575FE0300210D44 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FAB811CB1575FE0300210D44 /* libtinyunwind.c in Sources */,
+				FAB811CC1575FE0300210D44 /* libtinyunwind_getcontext.s in Sources */,
+				FAB811CD1575FE0300210D44 /* libtinyunwind_dwarf.c in Sources */,
+				FAB811CE1575FE0300210D44 /* libtinyunwind_compact.c in Sources */,
+				FAB811CF1575FE0300210D44 /* libtinyunwind_framepointer.c in Sources */,
+				FAB811D01575FE0300210D44 /* libtinyunwind_stackscan.c in Sources */,
+				FAB811D11575FE0300210D44 /* libtinyunwind_image.c in Sources */,
+				FAB811D21575FE0300210D44 /* libtinyunwind_asynclist.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FAB8120E1576022700210D44 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FAB8120F1576022700210D44 /* libtinyunwind.c in Sources */,
+				FAB812101576022700210D44 /* libtinyunwind_getcontext.s in Sources */,
+				FAB812111576022700210D44 /* libtinyunwind_dwarf.c in Sources */,
+				FAB812121576022700210D44 /* libtinyunwind_compact.c in Sources */,
+				FAB812131576022700210D44 /* libtinyunwind_framepointer.c in Sources */,
+				FAB812141576022700210D44 /* libtinyunwind_stackscan.c in Sources */,
+				FAB812151576022700210D44 /* libtinyunwind_image.c in Sources */,
+				FAB812161576022700210D44 /* libtinyunwind_asynclist.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2326,18 +2506,28 @@
 		};
 		FA2EB2341511E852000B6687 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = FA2EB2061510E518000B6687 /* tinyunwind */;
+			target = FA2EB2061510E518000B6687 /* tinyunwind-MacOSX */;
 			targetProxy = FA2EB2331511E852000B6687 /* PBXContainerItemProxy */;
 		};
 		FA2EB2371511E85B000B6687 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = FA2EB2061510E518000B6687 /* tinyunwind */;
+			target = FA2EB2061510E518000B6687 /* tinyunwind-MacOSX */;
 			targetProxy = FA2EB2361511E85B000B6687 /* PBXContainerItemProxy */;
 		};
 		FA2EB23E1511EC02000B6687 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = FA2EB2061510E518000B6687 /* tinyunwind */;
+			target = FA2EB2061510E518000B6687 /* tinyunwind-MacOSX */;
 			targetProxy = FA2EB23D1511EC02000B6687 /* PBXContainerItemProxy */;
+		};
+		FAB8120A157601AE00210D44 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FAB811C91575FE0300210D44 /* tinyunwind-iOS */;
+			targetProxy = FAB81209157601AE00210D44 /* PBXContainerItemProxy */;
+		};
+		FAB812231576025600210D44 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FAB8120D1576022700210D44 /* tinyunwind-iOS-Simulator */;
+			targetProxy = FAB812221576025600210D44 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -2620,7 +2810,7 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = (
 					armv6,
-					"$(ARCHS_STANDARD_32_BIT)",
+					armv7,
 				);
 				COPY_PHASE_STRIP = NO;
 				EXPORTED_SYMBOLS_FILE = Resources/CrashReporter.exp;
@@ -2644,7 +2834,7 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = (
 					armv6,
-					"$(ARCHS_STANDARD_32_BIT)",
+					armv7,
 				);
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
@@ -2697,7 +2887,6 @@
 				PRODUCT_NAME = "CrashReporter${EFFECTIVE_PLATFORM_NAME}";
 				SDKROOT = iphonesimulator;
 				SKIP_INSTALL = NO;
-				ZERO_LINK = NO;
 			};
 			name = Release;
 		};
@@ -3187,6 +3376,7 @@
 				EXECUTABLE_PREFIX = lib;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_MODEL_TUNING = G5;
+				GCC_PREPROCESSOR_DEFINITIONS = "DEBUG=1";
 				GENERATE_MASTER_OBJECT_FILE = YES;
 				INSTALL_PATH = /usr/local/lib;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -3213,6 +3403,86 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		FAB811DB1575FE0300210D44 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = (
+					armv6,
+					armv7,
+				);
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_PREFIX = lib;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_PREPROCESSOR_DEFINITIONS = "DEBUG=1";
+				GCC_THUMB_SUPPORT = NO;
+				GENERATE_MASTER_OBJECT_FILE = YES;
+				INSTALL_PATH = /usr/local/lib;
+				IPHONEOS_DEPLOYMENT_TARGET = 3.0;
+				PRODUCT_NAME = "tinyunwind-iphoneos";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		FAB811DC1575FE0300210D44 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = (
+					armv6,
+					armv7,
+				);
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				EXECUTABLE_PREFIX = lib;
+				GCC_PREPROCESSOR_DEFINITIONS = "NDEBUG=1";
+				GCC_THUMB_SUPPORT = NO;
+				GENERATE_MASTER_OBJECT_FILE = YES;
+				INSTALL_PATH = /usr/local/lib;
+				IPHONEOS_DEPLOYMENT_TARGET = 3.0;
+				PRODUCT_NAME = "tinyunwind-iphoneos";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		FAB8121F1576022700210D44 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(NATIVE_ARCH)";
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_PREFIX = lib;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_PREPROCESSOR_DEFINITIONS = "DEBUG=1";
+				GENERATE_MASTER_OBJECT_FILE = YES;
+				INSTALL_PATH = /usr/local/lib;
+				IPHONEOS_DEPLOYMENT_TARGET = 3.0;
+				PRODUCT_NAME = "tinyunwind-iphonesimulator";
+				SDKROOT = iphonesimulator;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		FAB812201576022700210D44 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(NATIVE_ARCH)";
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				EXECUTABLE_PREFIX = lib;
+				GCC_PREPROCESSOR_DEFINITIONS = "NDEBUG=1";
+				GENERATE_MASTER_OBJECT_FILE = YES;
+				INSTALL_PATH = /usr/local/lib;
+				IPHONEOS_DEPLOYMENT_TARGET = 3.0;
+				PRODUCT_NAME = "tinyunwind-iphonesimulator";
+				SDKROOT = iphonesimulator;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -3372,11 +3642,29 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		FA2EB2081510E518000B6687 /* Build configuration list for PBXNativeTarget "tinyunwind" */ = {
+		FA2EB2081510E518000B6687 /* Build configuration list for PBXNativeTarget "tinyunwind-MacOSX" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				FA2EB2091510E518000B6687 /* Debug */,
 				FA2EB20A1510E518000B6687 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FAB811DA1575FE0300210D44 /* Build configuration list for PBXNativeTarget "tinyunwind-iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FAB811DB1575FE0300210D44 /* Debug */,
+				FAB811DC1575FE0300210D44 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FAB8121E1576022700210D44 /* Build configuration list for PBXNativeTarget "tinyunwind-iOS-Simulator" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FAB8121F1576022700210D44 /* Debug */,
+				FAB812201576022700210D44 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
